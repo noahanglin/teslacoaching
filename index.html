@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moira Coaching | VOD Reviews & Live Coaching</title>
+  <meta name="description" content="Moira coaching for competitive players. Live 1-on-1 coaching sessions and offline VOD reviews to help you climb.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Social icons (referenced below with <use href="#i-...">) -->
+  <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-youtube" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></symbol>
+    <symbol id="i-twitch" viewBox="0 0 24 24"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></symbol>
+    <symbol id="i-discord" viewBox="0 0 24 24"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.028C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.011c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4.2-8 5-8-5V6l8 5 8-5z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932zM17.61 20.644h2.039L6.486 3.24H4.298z"/></symbol>
+  </svg>
+
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="#top" class="logo">
+        <span class="logo-orb" aria-hidden="true"></span>
+        <span>Tesla's<span class="logo-accent">COACHING</span></span>
+      </a>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav-links">
+        <a href="#about">About</a>
+        <a href="#services">Services</a>
+        <a href="#feedback">Feedback</a>
+        <a href="#faq">FAQ</a>
+        <a href="#book" class="btn btn-small">Book now</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">Moira specialist coaching</p>
+          <h1>Stop sucking.<br><span class="gradient-text">Start succing.</span></h1>
+          <p class="lead">
+            Learn how to bend the enemy to your will! Live sessions or
+            detailed VOD breakdowns, built around your gameplay.
+          </p>
+          <div class="hero-ctas">
+            <a href="#book" class="btn">Book a session</a>
+            <a href="#services" class="btn btn-ghost">Services</a>
+          </div>
+          <ul class="hero-stats">
+            <li><strong>$55</strong><span>per hour, live</span></li>
+            <li><strong>$30</strong><span>per VOD review</span></li>
+            <li><strong>1-on-1</strong><span>judgement free</span></li>
+          </ul>
+        </div>
+        <!-- Biotic orbs (v4). Earlier versions are saved in the versions/ folder -->
+        <div class="hero-art" aria-hidden="true">
+          <div class="ring"></div>
+
+          <!-- DAMAGE ORB: dark smoky vortex with wispy edges -->
+          <div class="borb borb-damage">
+            <svg viewBox="-120 -120 240 240" focusable="false">
+              <defs>
+                <radialGradient id="dmg-core" cx="0" cy="0" r="48" fx="4" fy="3" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#c98bff"/>
+                  <stop offset="0.3" stop-color="#a855f7"/>
+                  <stop offset="0.7" stop-color="#5a12b0"/>
+                  <stop offset="1" stop-color="#2e0760"/>
+                </radialGradient>
+                <radialGradient id="dmg-glow" cx="0" cy="0" r="110" gradientUnits="userSpaceOnUse">
+                  <stop offset="0.3" stop-color="#9d4dff" stop-opacity="0.5"/>
+                  <stop offset="0.6" stop-color="#7a2fe0" stop-opacity="0.18"/>
+                  <stop offset="1" stop-color="#7a2fe0" stop-opacity="0"/>
+                </radialGradient>
+                <!-- fades the swirl out softly toward the edge instead of a hard cut -->
+                <radialGradient id="dmg-edge" cx="0" cy="0" r="46" gradientUnits="userSpaceOnUse">
+                  <stop offset="0.75" stop-color="#fff"/>
+                  <stop offset="1" stop-color="#000"/>
+                </radialGradient>
+                <mask id="dmg-mask" maskUnits="userSpaceOnUse" x="-50" y="-50" width="100" height="100">
+                  <circle r="46" fill="url(#dmg-edge)"/>
+                </mask>
+                <!-- roughens the orb's outline into smoky, hair-like wisps -->
+                <filter id="dmg-smoke" filterUnits="userSpaceOnUse" x="-90" y="-90" width="180" height="180">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="2" seed="7" result="n"/>
+                  <feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="G" result="d"/>
+                  <feGaussianBlur in="d" stdDeviation="1.8"/>
+                </filter>
+                <filter id="dmg-tb" filterUnits="userSpaceOnUse" x="-260" y="-260" width="520" height="520"><feGaussianBlur stdDeviation="3"/></filter>
+                <filter id="dmg-b1" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="1.2"/></filter>
+                <filter id="dmg-b2" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="2.2"/></filter>
+                <filter id="dmg-b6" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="6"/></filter>
+              </defs>
+
+              <g class="orb-body"><circle r="110" fill="url(#dmg-glow)"/></g>
+
+              <!-- tendril that latches onto the cursor (driven by script.js) -->
+              <g class="tether" opacity="0">
+                <g class="tether-glows" fill="#c04dff" opacity="0.95" filter="url(#dmg-tb)"></g>
+                <g class="tether-cores" fill="#f7ebff"></g>
+                <g class="tether-sparks" fill="#f0d6ff"></g>
+                <g class="tether-flare">
+                  <circle class="flare-glow" r="10" fill="#c35bff" filter="url(#dmg-tb)"/>
+                  <ellipse rx="26" ry="1.1" fill="#fff" opacity="0.85"/>
+                  <ellipse rx="1" ry="9" fill="#fff" opacity="0.5"/>
+                  <circle r="2.6" fill="#fff"/>
+                </g>
+              </g>
+
+              <!-- everything in .orb-body shrinks/fades as the orb is used up (script.js) -->
+              <g class="orb-body">
+              <!-- soft smoky haze around the body -->
+              <circle r="55" fill="#7a2fe0" opacity="0.5" filter="url(#dmg-b6)">
+                <animate attributeName="r" values="53;57;53" dur="3.4s" repeatCount="indefinite"/>
+              </circle>
+
+              <!-- body with wispy, curling edge -->
+              <g filter="url(#dmg-smoke)">
+                <circle r="46" fill="url(#dmg-core)"/>
+                <g fill="none" stroke="#3a0a78" stroke-linecap="round" opacity="0.75">
+                  <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="26s" repeatCount="indefinite"/>
+                  <path d="M-30 -36 Q-47 -30 -50 -12" stroke-width="3.2"/>
+                  <path d="M10 -48 Q30 -53 43 -36" stroke-width="2.6"/>
+                  <path d="M48 -8 Q57 12 45 31" stroke-width="3"/>
+                  <path d="M28 43 Q12 57 -8 51" stroke-width="2.6"/>
+                  <path d="M-36 35 Q-53 24 -51 6" stroke-width="2.2"/>
+                  <path d="M-14 -48 Q-6 -60 8 -55" stroke-width="2"/>
+                  <path d="M50 18 Q61 21 58 32" stroke-width="1.6"/>
+                  <path d="M-47 -20 Q-59 -23 -56 -35" stroke-width="1.6"/>
+                  <path d="M-20 47 Q-30 58 -42 52" stroke-width="1.6"/>
+                </g>
+                <g fill="none" stroke="#a855f7" stroke-linecap="round" opacity="0.75">
+                  <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="33s" repeatCount="indefinite"/>
+                  <path d="M-42 -14 Q-48 6 -40 24" stroke-width="2.4"/>
+                  <path d="M20 -42 Q38 -36 46 -18" stroke-width="2"/>
+                  <path d="M38 30 Q24 46 4 48" stroke-width="2.2"/>
+                </g>
+              </g>
+
+              <!-- swirling vortex inside -->
+              <g mask="url(#dmg-mask)">
+                <g fill="none" stroke-linecap="round" filter="url(#dmg-b2)">
+                  <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="14s" repeatCount="indefinite"/>
+                  <g stroke="#c084ff" stroke-width="8.5" opacity="0.75">
+                    <path d="M42 8 C38 30 10 40 -12 30 C-27 23 -24 2 -8 -1 C0 -3 5 2 3 7"/>
+                    <path d="M42 8 C38 30 10 40 -12 30 C-27 23 -24 2 -8 -1 C0 -3 5 2 3 7" transform="rotate(120)"/>
+                    <path d="M42 8 C38 30 10 40 -12 30 C-27 23 -24 2 -8 -1 C0 -3 5 2 3 7" transform="rotate(240)"/>
+                  </g>
+                  <g stroke="#e2bcff" stroke-width="2.6" opacity="0.8">
+                    <path d="M36 2 C33 22 10 32 -8 25 C-20 20 -18 5 -6 3" transform="rotate(50)"/>
+                    <path d="M36 2 C33 22 10 32 -8 25 C-20 20 -18 5 -6 3" transform="rotate(170)"/>
+                    <path d="M36 2 C33 22 10 32 -8 25 C-20 20 -18 5 -6 3" transform="rotate(290)"/>
+                  </g>
+                </g>
+
+                <!-- magenta crescent around the eye of the vortex -->
+                <g fill="none" stroke-linecap="round">
+                  <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="9s" repeatCount="indefinite"/>
+                  <path d="M-8 -17 A19 19 0 0 1 17 9" stroke="#c04dff" stroke-width="11" opacity="0.55" filter="url(#dmg-b2)"/>
+                  <path d="M-8 -17 A19 19 0 0 1 17 9" stroke="#d9a6ff" stroke-width="5.5" filter="url(#dmg-b1)"/>
+                  <path d="M-6 -17 A18 18 0 0 1 16 9" stroke="#fdf6ff" stroke-width="1.8"/>
+                </g>
+                <circle cx="1" cy="3" r="6" fill="#fdf6ff" filter="url(#dmg-b2)">
+                  <animate attributeName="opacity" values="0.6;1;0.6" dur="2.2s" repeatCount="indefinite"/>
+                </circle>
+              </g>
+
+              <!-- drifting dark droplets -->
+              <g fill="#9d4dff">
+                <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="48s" repeatCount="indefinite"/>
+                <circle cx="-64" cy="-30" r="3.2"><animate attributeName="opacity" values="0.9;0.4;0.9" dur="4s" repeatCount="indefinite"/></circle>
+                <circle cx="-71" cy="10" r="2.2"/>
+                <circle cx="58" cy="-46" r="1.6"><animate attributeName="opacity" values="0.4;0.9;0.4" dur="3.2s" repeatCount="indefinite"/></circle>
+                <circle cx="66" cy="27" r="2.4"/>
+                <circle cx="-40" cy="63" r="2.8"><animate attributeName="opacity" values="0.8;0.3;0.8" dur="5s" repeatCount="indefinite"/></circle>
+                <circle cx="30" cy="-67" r="1.4"/>
+                <circle cx="-59" cy="48" r="1.8"/>
+                <circle cx="73" cy="-6" r="1.4"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="3.6s" repeatCount="indefinite"/></circle>
+              </g>
+              </g>
+            </svg>
+          </div>
+
+          <!-- HEALING ORB: glowing liquid-light sphere -->
+          <div class="borb borb-heal">
+            <svg viewBox="-120 -120 240 240" focusable="false">
+              <defs>
+                <radialGradient id="heal-core" cx="0" cy="0" r="46" fx="6" fy="-6" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#ffd447"/>
+                  <stop offset="0.5" stop-color="#e09a12"/>
+                  <stop offset="0.85" stop-color="#a8670a"/>
+                  <stop offset="1" stop-color="#6b3f00"/>
+                </radialGradient>
+                <radialGradient id="heal-glow" cx="0" cy="0" r="115" gradientUnits="userSpaceOnUse">
+                  <stop offset="0.3" stop-color="#ffc83a" stop-opacity="0.5"/>
+                  <stop offset="0.6" stop-color="#f2a516" stop-opacity="0.16"/>
+                  <stop offset="1" stop-color="#f2a516" stop-opacity="0"/>
+                </radialGradient>
+                <!-- fades the liquid cells out softly toward the edge instead of a hard cut -->
+                <radialGradient id="heal-edge" cx="0" cy="0" r="46" gradientUnits="userSpaceOnUse">
+                  <stop offset="0.8" stop-color="#fff"/>
+                  <stop offset="1" stop-color="#000"/>
+                </radialGradient>
+                <mask id="heal-mask" maskUnits="userSpaceOnUse" x="-50" y="-50" width="100" height="100">
+                  <circle r="46" fill="url(#heal-edge)"/>
+                </mask>
+                <filter id="heal-b1" filterUnits="userSpaceOnUse" x="-60" y="-60" width="120" height="120"><feGaussianBlur stdDeviation="1.4"/></filter>
+                <!-- "gooey" filter: blurs moving blobs then sharpens the edges so they merge like liquid -->
+                <filter id="heal-goo" filterUnits="userSpaceOnUse" x="-50" y="-50" width="100" height="100">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3.2" result="b"/>
+                  <feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+                  <feGaussianBlur in="g" stdDeviation="0.5"/>
+                </filter>
+                <filter id="heal-tb" filterUnits="userSpaceOnUse" x="-260" y="-260" width="520" height="520"><feGaussianBlur stdDeviation="3"/></filter>
+                <filter id="heal-b2" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="2"/></filter>
+                <filter id="heal-b6" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="6"/></filter>
+              </defs>
+
+              <g class="orb-body">
+                <circle r="115" fill="url(#heal-glow)">
+                  <animate attributeName="opacity" values="0.85;1;0.85" dur="2.6s" repeatCount="indefinite"/>
+                </circle>
+              </g>
+
+              <!-- tendril that latches onto the cursor (driven by script.js) -->
+              <g class="tether" opacity="0">
+                <g class="tether-glows" fill="#e9dc1f" opacity="0.75" filter="url(#heal-tb)"></g>
+                <g class="tether-cores" fill="#fffbd6"></g>
+                <g class="tether-sparks" fill="#fff59a"></g>
+                <g class="tether-flare">
+                  <circle class="flare-glow" r="10" fill="#f5e43a" filter="url(#heal-tb)"/>
+                  <ellipse rx="26" ry="1.1" fill="#fff" opacity="0.85"/>
+                  <ellipse rx="1" ry="9" fill="#fff" opacity="0.5"/>
+                  <circle r="2.6" fill="#fff"/>
+                </g>
+              </g>
+
+              <!-- everything in .orb-body shrinks/fades as the orb is used up (script.js) -->
+              <g class="orb-body">
+              <!-- bright halo hugging the sphere -->
+              <circle r="50" fill="#ffc83a" opacity="0.85" filter="url(#heal-b6)">
+                <animate attributeName="opacity" values="0.75;0.95;0.75" dur="2.6s" repeatCount="indefinite"/>
+              </circle>
+
+              <!-- dark olive body -->
+              <circle r="46" fill="url(#heal-core)" filter="url(#heal-b1)"/>
+
+              <!-- liquid light cells that drift, merge and split -->
+              <g mask="url(#heal-mask)">
+                <g filter="url(#heal-goo)" fill="#ffe27a">
+                  <g>
+                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="19s" repeatCount="indefinite"/>
+                    <circle cx="-30" cy="-10" r="10.5"/>
+                    <circle cx="-19" cy="24" r="10"/>
+                    <circle cx="9" cy="32" r="11"/>
+                    <circle cx="30" cy="17" r="9"/>
+                    <circle cx="-5" cy="-34" r="10"/>
+                    <circle cx="31" cy="-21" r="8.5"/>
+                    <circle cx="-37" cy="16" r="7.5"/>
+                    <circle cx="-26" cy="-32" r="7"/>
+                  </g>
+                  <g>
+                    <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="27s" repeatCount="indefinite"/>
+                    <circle cx="-22" cy="-24" r="8.5"/>
+                    <circle cx="23" cy="34" r="7.5"/>
+                    <circle cx="38" cy="1" r="8.5"/>
+                    <circle cx="-40" cy="-2" r="7"/>
+                    <circle cx="1" cy="42" r="8"/>
+                    <circle cx="17" cy="-39" r="7"/>
+                    <circle cx="40" cy="-14" r="6"/>
+                  </g>
+                  <g>
+                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="12s" repeatCount="indefinite"/>
+                    <circle cx="-15" cy="-15" r="7"/>
+                    <circle cx="-17" cy="9" r="6.5"/>
+                    <circle cx="15" cy="17" r="6.5"/>
+                    <circle cx="20" cy="-8" r="5.5"/>
+                  </g>
+                </g>
+              </g>
+
+              <!-- hot cream core with a dark notch -->
+              <circle cx="4" cy="-2" r="17" fill="#fffef2" filter="url(#heal-b2)">
+                <animate attributeName="r" values="16;18.5;16" dur="2.6s" repeatCount="indefinite"/>
+              </circle>
+              <circle cx="-3" cy="-18" r="7.5" fill="#b8740c" filter="url(#heal-b2)">
+                <animateTransform attributeName="transform" type="rotate" values="-20 4 -3;20 4 -3;-20 4 -3" dur="7s" repeatCount="indefinite"/>
+              </circle>
+
+              <!-- soft glowing rim -->
+              <circle r="45" fill="none" stroke="#ffe08a" stroke-width="3" opacity="0.45" filter="url(#heal-b2)"/>
+
+              <!-- twinkling sparkles -->
+              <g fill="#fff6cf">
+                <circle cx="44" cy="-56" r="2.2"><animate attributeName="opacity" values="0.2;1;0.2" dur="1.8s" repeatCount="indefinite"/></circle>
+                <circle cx="52" cy="-47" r="1.3"><animate attributeName="opacity" values="1;0.2;1" dur="2.3s" repeatCount="indefinite"/></circle>
+                <circle cx="58" cy="38" r="1.8"><animate attributeName="opacity" values="0.3;1;0.3" dur="2.6s" repeatCount="indefinite"/></circle>
+                <circle cx="46" cy="52" r="1.2"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+                <circle cx="62" cy="-8" r="1.5"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="2.1s" repeatCount="indefinite"/></circle>
+                <circle cx="-54" cy="-40" r="1.3"><animate attributeName="opacity" values="0.9;0.2;0.9" dur="2.8s" repeatCount="indefinite"/></circle>
+                <circle cx="-50" cy="46" r="1.6"><animate attributeName="opacity" values="0.3;1;0.3" dur="2.4s" repeatCount="indefinite"/></circle>
+                <circle cx="-60" cy="4" r="1.1"><animate attributeName="opacity" values="1;0.2;1" dur="1.9s" repeatCount="indefinite"/></circle>
+              </g>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="section section-alt">
+      <div class="container about">
+        <div class="about-avatar">
+          <img src="images/avatar.jpg" alt="Tesla, Moira coach" width="600" height="600">
+        </div>
+        <div>
+          <p class="eyebrow">About your coach</p>
+          <h2>Hi, I'm Tesla</h2>
+          <p>
+            I've been playing Moira since her release in 2017 and maintained mid to high top 500 every season since. I coach players
+            from Bronze through Grandmaster in 5v5 and 6v6. I have played through every rank and gamemode many times and can meet you where you are.
+			I will offer realistic advice tailored to your needs. If you are feeling stuck, I want to help!
+          </p>
+          <ul class="about-facts">
+            <li><strong>4506</strong><span>OW1 peak SR</span></li>
+            <li><strong>Champion 5</strong><span>OW2 5v5 peak</span></li>
+            <li><strong>Champion 2</strong><span>OW2 6v6 peak</span></li>
+            <li><strong>9+ years</strong><span>On Moira</span></li>
+          </ul>
+          <div class="socials">
+            <a class="social-link yt" href="https://www.youtube.com/@TeslaScience" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-youtube"/></svg>YouTube</a>
+            <a class="social-link tw" href="https://www.twitch.tv/Tesla" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-twitch"/></svg>Twitch</a>
+            <a class="social-link dc" href="https://discord.gg/bwgdJSX" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-discord"/></svg>Discord server</a>
+            <a class="social-link x" href="https://twitter.com/TeslaSciences" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-x"/></svg>X / Twitter</a>
+          </div>
+          <div class="about-contact">
+            <span class="about-contact-label">Contact me</span>
+            <a class="contact-item" href="mailto:moiracoaching@gmail.com"><svg aria-hidden="true"><use href="#i-mail"/></svg>moiracoaching@gmail.com</a>
+            <button class="contact-item" type="button" data-copy="tesla0945" aria-label="Copy Discord username tesla0945">
+              <svg aria-hidden="true"><use href="#i-discord"/></svg>tesla0945<span class="copy-hint">Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVICES -->
+    <section id="services" class="section">
+      <div class="container">
+        <p class="eyebrow center">Services</p>
+        <h2 class="center">Pick how you want to improve</h2>
+        <div class="cards">
+          <article class="card card-featured">
+            <span class="badge">Applied Learning</span>
+            <h3>Live Coaching</h3>
+            <p class="price"><span>$55</span> / hour</p>
+            <p class="card-desc">Real-time coaching while you play, or a live review of your replays together over voice.</p>
+            <ul class="checklist">
+              <li>Live commentary as you play</li>
+              <li>Live instruction to teach creative decisionmaking</li>
+              <li>Ask me anything: matchups, team comps, mindset</li>
+              <li>Personal improvement plan after the session</li>
+            </ul>
+            <a href="#book" class="btn btn-block" data-service="live">Book live coaching</a>
+          </article>
+
+          <article class="card card-featured">
+			<span class="badge">Let's Review</span>
+            <h3>VOD Review</h3>
+            <p class="price"><span>$30</span> / replay</p>
+            <p class="card-desc">Send a replay code and get a thorough breakdown you can rewatch whenever you want.</p>
+            <ul class="checklist">
+              <li>Full review of one competitive match</li>
+              <li>Notes on key mistakes and good plays</li>
+              <li>Summary of things to focus on</li>
+              <li>Delivered within 48 hours</li>
+            </ul>
+            <a href="#book" class="btn btn-ghost btn-block" data-service="vod">Order a VOD review</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHAT YOU'LL LEARN -->
+    <section class="section section-alt">
+      <div class="container">
+        <p class="eyebrow center">What we work on</p>
+        <h2 class="center">How to take control on Moira</h2>
+        <div class="topics">
+          <div class="topic">
+            <h3>Positioning</h3>
+            <p>How to take space and leech enemy resources.</p>
+          </div>
+          <div class="topic">
+            <h3>Orb usage</h3>
+            <p>When to use healing or damage orb. Techniques to maximize orb value.</p>
+          </div>
+          <div class="topic">
+            <h3>Fade discipline</h3>
+            <p>Saving fade for when you need it and how to take damage without dying.</p>
+          </div>
+          <div class="topic">
+            <h3>Resource management</h3>
+            <p>Holding aggressive angles so you never have to worry about healing resource again.</p>
+          </div>
+          <div class="topic">
+            <h3>Coalescence</h3>
+            <p>Target priority and recognizing the best times to ult.</p>
+          </div>
+          <div class="topic">
+            <h3>Game sense</h3>
+            <p>Learn the flow of a teamfight. Anticipate threats to avoid them.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEEDBACK -->
+    <section id="feedback" class="section">
+      <div class="container">
+        <p class="eyebrow center">Feedback</p>
+        <h2 class="center">What viewers are saying</h2>
+        <p class="section-sub center">Real comments from my <a href="https://www.youtube.com/@TeslaScience" target="_blank" rel="noopener">YouTube channel</a>.</p>
+        <!--
+          Each card links to the original comment. Video keys:
+          B2GM    = Moira Only Bronze 5 to GM 1: Part 1     (eltYNfEpkvc)
+          RANKING = How Overwatch 2's Ranking System Works  (9KPrfhYysTU)
+          FLANK   = How to Play Moira in a God Honoring Way (XhtXbr8OO6c)
+        -->
+        <div class="carousel">
+          <button class="carousel-btn carousel-prev" type="button" aria-label="Previous comments" aria-controls="reviews-track">&#8249;</button>
+          <div class="reviews" id="reviews-track" tabindex="0" aria-label="Viewer comments" role="region">
+
+            <figure class="review">
+              <span class="review-tag">Plat → GM &amp; Top 500</span>
+              <blockquote>&ldquo;I started watching your first unranked to GM series when I was in plat, now i'm GM&hellip; I even got top500 in the first season of overwatch2 thanks to your unranked to GM series.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@zzzetsubo</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=Ugw4tWBzWptuyeJoPs94AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag">Silver 1 → Plat 2</span>
+              <blockquote>&ldquo;I followed your advice, and it's spot on. I was stuck at Silver 1&hellip; I am currently Plat 2. It helped me a lot!&rdquo;</blockquote>
+              <figcaption><span class="review-author">@ltghost_9</span><a href="https://www.youtube.com/watch?v=9KPrfhYysTU&amp;lc=Ugyg9DoFsgQl9DYE_SJ4AaABAg" target="_blank" rel="noopener">OW2 Ranking System &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag">Reached Masters</span>
+              <blockquote>&ldquo;Tesla, I finally reached Masters today and I just want to say thank you for helping me get there.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@mitchconner6316</span><a href="https://www.youtube.com/watch?v=XhtXbr8OO6c&amp;lc=Ugzu6Odu-dS-NangsVB4AaABAg" target="_blank" rel="noopener">Flank Moira &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag">Peaked GM 3</span>
+              <blockquote>&ldquo;I made it all the way up to GM 3 adapting your play style to mine.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@d-beezybaby</span><a href="https://www.youtube.com/watch?v=XhtXbr8OO6c&amp;lc=UgwMze4UagLiqtAF6Ht4AaABAg" target="_blank" rel="noopener">Flank Moira &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Teaching</span>
+              <blockquote>&ldquo;It is the single most informative and actually educational rank-up/play-style guide I've ever seen in my life.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@Wuggy1210</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgxJmaxcxbWwEdOsOoB4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Attitude</span>
+              <blockquote>&ldquo;I dig your attitude towards lower ranked players&hellip; It's nice that you're positive and humble towards others.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@BlondeMcGuinn</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgxHxlxax1qCPYefiUJ4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+
+            <figure class="review">
+              <span class="review-tag">Bronze → Gold</span>
+              <blockquote>&ldquo;This helped a lot with my motivation, thank you!&hellip; I've just hit gold, which I was really proud of after assuming I was around silver.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@halley1888</span><a href="https://www.youtube.com/watch?v=9KPrfhYysTU&amp;lc=UgzRnyxgzy5Pp7fvXRp4AaABAg" target="_blank" rel="noopener">OW2 Ranking System &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag">Diamond</span>
+              <blockquote>&ldquo;I'm a Moira main in Diamond but I still take away a lot of good plays and decision making from these videos - keep it up! :)&rdquo;</blockquote>
+              <figcaption><span class="review-author">@celinemojica4888</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=Ugyb4_IHg9FYTfXYtip4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Live stream</span>
+              <blockquote>&ldquo;Tesla i dropped in ur stream lastnight. U really gave me hope. Tysm. I just won 4 in a row with ur help.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@coconutzrule5935</span><a href="https://www.youtube.com/watch?v=XhtXbr8OO6c&amp;lc=Ugzz1q-Fo28L7naK81Z4AaABAg" target="_blank" rel="noopener">Flank Moira &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Series</span>
+              <blockquote>&ldquo;Your Bronze to GM's always help me soooo much! Always come back to this one and the others!&rdquo;</blockquote>
+              <figcaption><span class="review-author">@JessicaCheyenneTV</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgwL_6tE7oPXM9wb_Sd4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag">Plat → Diamond</span>
+              <blockquote>&ldquo;I get super nervous as I get into higher elo matches (diamond) as I get out of plat. So watching your diamond gameplay is helping a bunch.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@haplitz</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgzG95FeT6bjN0rnT-p4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Guidance</span>
+              <blockquote>&ldquo;Thanks for your sharing and guidance. It gives me a great direction about what I need to achieve for griding out ranks, especially from stats perspective. :)&rdquo;</blockquote>
+              <figcaption><span class="review-author">@firmament29</span><a href="https://www.youtube.com/watch?v=9KPrfhYysTU&amp;lc=UgyEBpz3UBczYTgJ9Ud4AaABAg" target="_blank" rel="noopener">OW2 Ranking System &#8599;</a></figcaption>
+            </figure>
+
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Gameplay</span>
+              <blockquote>&ldquo;hey, thanks for this it really helped my moira gameplay.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@Umbran_shadow</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgxHBPNOYCQc1NQGEzZ4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Improvement</span>
+              <blockquote>&ldquo;Great games! You helped me get better with her.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@GuilhermeOliveira-se3zh</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=Ugybi85ROkWzfnXWA3F4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Healing</span>
+              <blockquote>&ldquo;The healing points in the previous series were very helpful for me.&rdquo;</blockquote>
+              <figcaption><span class="review-author">@sumdumass</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgwlsZENDy5YF1nVPmF4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Motivation</span>
+              <blockquote>&ldquo;currently stuck in gold on one of my accounts&hellip; have been watching the series from season 1 to boost my morale. tesla, you're incredible &lt;3&rdquo;</blockquote>
+              <figcaption><span class="review-author">@maneater</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgyO1HqGbalyHlwssbF4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Gameplay</span>
+              <blockquote>&ldquo;your Moira gameplay has been very helpful thx&rdquo;</blockquote>
+              <figcaption><span class="review-author">@leohlaslish9660</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgyghMZOcJXuWmiUvCF4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+            <figure class="review">
+              <span class="review-tag review-tag-gold">Helpful</span>
+              <blockquote>&ldquo;These are so helpful, thanks!&rdquo;</blockquote>
+              <figcaption><span class="review-author">@ehmertaj7528</span><a href="https://www.youtube.com/watch?v=eltYNfEpkvc&amp;lc=UgznOLP-W0gKHWfc-ZJ4AaABAg" target="_blank" rel="noopener">Bronze 5 to GM 1 &#8599;</a></figcaption>
+            </figure>
+
+          </div>
+          <button class="carousel-btn carousel-next" type="button" aria-label="Next comments" aria-controls="reviews-track">&#8250;</button>
+        </div>
+        <div class="carousel-dots" id="reviews-dots" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- BOOKING -->
+    <section id="book" class="section section-alt">
+      <div class="container">
+        <p class="eyebrow center">Book a session</p>
+        <h2 class="center">Reserve your spot</h2>
+
+        <form class="booking" id="booking-form" novalidate>
+          <div class="booking-main">
+
+            <fieldset class="field-group">
+              <legend>1. Service</legend>
+              <div class="service-options">
+                <label class="service-option">
+                  <input type="radio" name="service" value="live" checked>
+                  <span class="service-box">
+                    <strong>Live Coaching</strong>
+                    <small>$55 / hour</small>
+                  </span>
+                </label>
+                <label class="service-option">
+                  <input type="radio" name="service" value="vod">
+                  <span class="service-box">
+                    <strong>VOD Review</strong>
+                    <small>$30 / replay</small>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            <!-- Live coaching: duration + date/time -->
+            <div id="live-fields">
+              <fieldset class="field-group">
+                <legend>2. Session length</legend>
+                <div class="pill-row" id="duration-options">
+                  <label class="pill"><input type="radio" name="duration" value="1" checked><span>1 hour</span></label>
+                  <label class="pill"><input type="radio" name="duration" value="1.5"><span>1.5 hours</span></label>
+                  <label class="pill"><input type="radio" name="duration" value="2"><span>2 hours</span></label>
+                </div>
+              </fieldset>
+
+              <fieldset class="field-group">
+                <legend>3. Pick a date</legend>
+                <div class="date-strip" id="date-strip" role="listbox" aria-label="Available dates"></div>
+              </fieldset>
+
+              <fieldset class="field-group">
+                <legend>4. Pick a time <span class="tz" id="tz-label"></span></legend>
+                <div class="time-grid" id="time-grid">
+                  <p class="muted">Select a date to see open times.</p>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- VOD review: replay code -->
+            <div id="vod-fields" hidden>
+              <fieldset class="field-group">
+                <legend>2. Your replay</legend>
+                <label class="input-label" for="replay-code">Replay code</label>
+                <input type="text" id="replay-code" name="replayCode" placeholder="e.g. A1B2C3" maxlength="12" autocomplete="off">
+                <label class="input-label" for="vod-notes">Anything specific you want reviewed? (optional)</label>
+                <textarea id="vod-notes" name="vodNotes" rows="3" placeholder="e.g. I keep dying in the first fight on push maps"></textarea>
+              </fieldset>
+            </div>
+
+            <fieldset class="field-group">
+              <legend id="details-legend">5. Your details</legend>
+              <div class="input-row">
+                <div>
+                  <label class="input-label" for="name">Name</label>
+                  <input type="text" id="name" name="name" autocomplete="name" required>
+                </div>
+                <div>
+                  <label class="input-label" for="email">Email</label>
+                  <input type="email" id="email" name="email" autocomplete="email" required>
+                </div>
+              </div>
+              <div class="input-row">
+                <div>
+                  <label class="input-label" for="discord">Discord username</label>
+                  <input type="text" id="discord" name="discord" required>
+                </div>
+                <div>
+                  <label class="input-label" for="rank">Current rank</label>
+                  <select id="rank" name="rank">
+                    <option>Bronze</option>
+                    <option>Silver</option>
+                    <option selected>Gold</option>
+                    <option>Platinum</option>
+                    <option>Diamond</option>
+                    <option>Master</option>
+                    <option>Grandmaster</option>
+                    <option>Champion</option>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-group">
+              <legend id="privacy-legend">6. Privacy</legend>
+              <label class="check-option">
+                <input type="checkbox" id="private" name="private">
+                <span class="check-box" aria-hidden="true"></span>
+                <span class="check-text">
+                  <strong>Keep my session private <em class="addon-price">+$5</em></strong>
+                  <small>By default, I may post clips or highlights from sessions on my channels. Check this and your content won't be posted anywhere.</small>
+                </span>
+              </label>
+            </fieldset>
+          </div>
+
+          <aside class="summary">
+            <h3>Summary</h3>
+            <dl>
+              <div><dt>Service</dt><dd id="sum-service">Live Coaching</dd></div>
+              <div id="sum-length-row"><dt>Length</dt><dd id="sum-length">1 hour</dd></div>
+              <div id="sum-when-row"><dt>When</dt><dd id="sum-when">Not selected</dd></div>
+              <div id="sum-delivery-row" hidden><dt>Delivery</dt><dd>Within 48 hours</dd></div>
+              <div id="sum-private-row" hidden><dt>Private session</dt><dd>+$5.00</dd></div>
+            </dl>
+            <div class="summary-total">
+              <span>Total</span>
+              <strong id="sum-total">$55.00</strong>
+            </div>
+            <button type="submit" class="btn btn-block" id="submit-btn">Continue to payment</button>
+            <p class="form-error" id="form-error" role="alert"></p>
+            <p class="fine-print">Secure checkout with Stripe. Free reschedule with 24 hours' notice.</p>
+          </aside>
+        </form>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="section">
+      <div class="container narrow">
+        <p class="eyebrow center">FAQ</p>
+        <h2 class="center">Common questions</h2>
+        <div class="faq">
+          <details>
+            <summary>What do I need for a live session?</summary>
+            <p>A Discord account with a working mic, and the game ready to play. We'll connect on Discord at your session time.</p>
+          </details>
+          <details>
+            <summary>How do I get a replay code?</summary>
+            <p>After a match, open Career Profile, go to Replays, and copy the code for the game you want reviewed. Replays expire after a new patch, so send it soon after you play.</p>
+          </details>
+          <details>
+            <summary>Do you only coach Moira?</summary>
+            <p>Moira is my specialty, but a lot of the lessons (positioning, game sense, cooldown tracking) carry over to other support heroes too.
+			I can coach diamond rank and below for most heroes. My tank and dps roles peaked GM but I do not practice them often.</p>
+          </details>
+          <details>
+            <summary>What if I need to reschedule?</summary>
+            <p>Let me know at least 24 hours before your session and I'll move it to another open slot, no charge.</p>
+          </details>
+          <details>
+            <summary>What rank do I need to be?</summary>
+            <p>Any rank. Sessions are tailored to where you are right now. Feel free to leave out your rank if you want a purely objective analysis of your gameplay.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p>&copy; <span id="year"></span> Tesla Coaching.</p>
+      <div class="footer-socials">
+        <a href="https://www.youtube.com/@TeslaScience" target="_blank" rel="noopener" aria-label="YouTube"><svg aria-hidden="true"><use href="#i-youtube"/></svg></a>
+        <a href="https://www.twitch.tv/Tesla" target="_blank" rel="noopener" aria-label="Twitch"><svg aria-hidden="true"><use href="#i-twitch"/></svg></a>
+        <a href="https://discord.gg/bwgdJSX" target="_blank" rel="noopener" aria-label="Discord"><svg aria-hidden="true"><use href="#i-discord"/></svg></a>
+        <a href="https://twitter.com/TeslaSciences" target="_blank" rel="noopener" aria-label="X / Twitter"><svg aria-hidden="true"><use href="#i-x"/></svg></a>
+      </div>
+      <p><a href="mailto:moiracoaching@gmail.com">moiracoaching@gmail.com</a> · Discord: <span>tesla0945</span></p>
+    </div>
+  </footer>
+
+  <!-- Confirmation modal -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h3 id="modal-title">Almost done!</h3>
+      <p class="muted" id="modal-intro"></p>
+      <p class="modal-status" id="modal-status" role="status" hidden></p>
+      <pre class="modal-summary" id="modal-summary"></pre>
+      <ol class="modal-steps">
+        <li id="email-step">
+          <span class="modal-step-label">Send me your booking details</span>
+          <div class="modal-actions">
+            <a class="btn" id="modal-send" href="#">Email booking details</a>
+            <button class="btn btn-ghost" id="modal-copy" type="button">Copy details</button>
+          </div>
+        </li>
+        <li id="pay-step" hidden>
+          <span class="modal-step-label">Pay securely</span>
+          <div class="modal-actions">
+            <a class="btn" id="modal-pay" href="#">Pay with Stripe</a>
+          </div>
+        </li>
+      </ol>
+      <p class="fine-print modal-note" id="modal-note"></p>
+      <button class="modal-close" id="modal-close" type="button" aria-label="Close">&times;</button>
+    </div>
+  </div>
+
+  <!-- Shown after Stripe sends the customer back (set the Payment Link's
+       "after payment" redirect to your site address with ?paid=1 on the end) -->
+  <div class="modal" id="paid-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="paid-title">
+      <h3 id="paid-title">Payment received. Thank you!</h3>
+      <p class="muted">You're booked<span id="paid-id"></span>. I'll confirm your session on Discord or by email within 24 hours. If you haven't sent your booking details yet, email them to <a href="mailto:moiracoaching@gmail.com">moiracoaching@gmail.com</a>.</p>
+      <div class="modal-actions">
+        <button class="btn" id="paid-close" type="button">Got it</button>
+      </div>
+      <button class="modal-close" id="paid-x" type="button" aria-label="Close">&times;</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
