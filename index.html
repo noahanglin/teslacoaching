@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,7 +27,7 @@
   <header class="nav">
     <div class="container nav-inner">
       <a href="#top" class="logo">
-        <span class="logo-orb" aria-hidden="true"></span>
+        <img class="logo-img" src="images/logo.jpg" alt="" width="30" height="30">
         <span>Tesla's<span class="logo-accent">COACHING</span></span>
       </a>
       <button class="nav-toggle" aria-label="Open menu" aria-expanded="false">
@@ -163,13 +166,6 @@
                   </g>
                 </g>
 
-                <!-- magenta crescent around the eye of the vortex -->
-                <g fill="none" stroke-linecap="round">
-                  <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="9s" repeatCount="indefinite"/>
-                  <path d="M-8 -17 A19 19 0 0 1 17 9" stroke="#c04dff" stroke-width="11" opacity="0.55" filter="url(#dmg-b2)"/>
-                  <path d="M-8 -17 A19 19 0 0 1 17 9" stroke="#d9a6ff" stroke-width="5.5" filter="url(#dmg-b1)"/>
-                  <path d="M-6 -17 A18 18 0 0 1 16 9" stroke="#fdf6ff" stroke-width="1.8"/>
-                </g>
                 <circle cx="1" cy="3" r="6" fill="#fdf6ff" filter="url(#dmg-b2)">
                   <animate attributeName="opacity" values="0.6;1;0.6" dur="2.2s" repeatCount="indefinite"/>
                 </circle>
@@ -634,6 +630,7 @@
                     <option>Master</option>
                     <option>Grandmaster</option>
                     <option>Champion</option>
+                    <option>Prefer not to say</option>
                   </select>
                 </div>
               </div>
@@ -685,7 +682,16 @@
           </details>
           <details>
             <summary>How do I get a replay code?</summary>
-            <p>After a match, open Career Profile, go to Replays, and copy the code for the game you want reviewed. Replays expire after a new patch, so send it soon after you play.</p>
+            <ol>
+              <li>From the main menu, open <strong>Career Profile</strong>.</li>
+              <li>Go to the <strong>History</strong> tab, then <strong>Replays</strong>.</li>
+              <li>Find the match you want reviewed. The list shows the map, mode, hero and date, which makes it easy to spot.</li>
+              <li>Select it and choose <strong>Copy code</strong>, or write down the 6-character code shown next to it.</li>
+            </ol>
+          </details>
+          <details>
+            <summary>What games should I send in for review?</summary>
+            <p>Any game you tried your hardest in and had a close outcome. I want to see your peak effort so I know how to push you even further. A close outcome tells me the matchmaking was likely more balanced.</p>
           </details>
           <details>
             <summary>Do you only coach Moira?</summary>
@@ -695,10 +701,6 @@
           <details>
             <summary>What if I need to reschedule?</summary>
             <p>Let me know at least 24 hours before your session and I'll move it to another open slot, no charge.</p>
-          </details>
-          <details>
-            <summary>What rank do I need to be?</summary>
-            <p>Any rank. Sessions are tailored to where you are right now. Feel free to leave out your rank if you want a purely objective analysis of your gameplay.</p>
           </details>
         </div>
       </div>

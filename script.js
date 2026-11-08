@@ -17,17 +17,18 @@ const CONFIG = {
 
   // Weekly availability (24h clock, in coachTimeZone).
   // 0 = Sunday ... 6 = Saturday. Leave an empty array for days off.
+  // "24:00" means midnight at the end of that day; sessions must finish by then.
   availability: {
-    0: [["12:00", "20:00"]],
-    1: [["17:00", "22:00"]],
-    2: [["17:00", "22:00"]],
-    3: [["17:00", "22:00"]],
-    4: [["17:00", "22:00"]],
-    5: [["16:00", "23:00"]],
-    6: [["12:00", "20:00"]],
+    0: [["17:00", "24:00"]],
+    1: [["17:00", "24:00"]],
+    2: [["17:00", "24:00"]],
+    3: [["17:00", "24:00"]],
+    4: [["17:00", "24:00"]],
+    5: [["17:00", "24:00"]],
+    6: [["17:00", "24:00"]],
   },
 
-  slotStepMinutes: 60,  // how often a session can start
+  slotStepMinutes: 30,  // how often a session can start (30 = on the hour and half hour)
   daysAhead: 14,        // how far out people can book
   minNoticeHours: 12,   // no bookings sooner than this
 
