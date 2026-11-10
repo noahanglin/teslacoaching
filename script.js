@@ -39,9 +39,19 @@ const CONFIG = {
   //   emails (yours and the customer's) from your Gmail.
   bookingsUrl: "https://script.google.com/macros/s/AKfycbxC6CsTotgpFHxQbm1X8MThDjTHx-r0hIle6prtniFphtHl_HwsEMqnfiA0Kyof1-SB/exec",
 
-  // Stripe Payment Links (create these in your Stripe dashboard, then paste
-  // each link here). Each link must charge exactly the price shown.
-  // Leave one blank ("") and that option falls back to an email request.
+  // Stripe's payment form shown inside the site (embedded checkout).
+  // Publishable keys are meant to be public: Stripe → Developers → API keys.
+  // The bookings sheet creates each checkout with its own secret key.
+  // While the live key is blank, customers go to the payment links below.
+  stripePublishableKey: "pk_live_51QrUXOFfi36TOg6mRUUSKamfLVMUPQHo4SVfaUV1YH8kEWSdY3DJ5J8yUoEdTdDjkweOOR7mRzwfa2f9nq9iTXDE00mhiERW1O",
+  // Optional: Stripe TEST mode key. Opening the site with ?test=1 shows a
+  // "Test booking" button that runs the whole flow with no real charge
+  // (pay with card 4242 4242 4242 4242, any future date, any CVC).
+  stripeTestPublishableKey: "pk_test_51QrUXOFfi36TOg6mngtSUhAuQMKHvF9ZRgouHJpAzsd0KyiQhwkQbEuxBdSGG8JHGF6OXIsMbJpGyPhuUl7ECFti001L371LXf",
+
+  // BACKUP: Stripe Payment Links, used only if the embedded form can't load
+  // (key not set, Stripe or the bookings sheet unreachable). Each link must
+  // charge exactly the price shown.
   paymentLinks: {
     "live-60":          "https://book.stripe.com/eVq5kDgp98cbgad4pPbjW00", // Live coaching, 1 hour              $55.00
     "live-90":          "https://book.stripe.com/eVqbJ10qbdwvf691dDbjW01", // Live coaching, 1.5 hours           $82.50
@@ -51,14 +61,6 @@ const CONFIG = {
     "live-90-private":  "https://book.stripe.com/9B628r0qb2RRgad9K9bjW05", // Live coaching, 1.5 hours + private $87.50
     "live-120-private": "https://book.stripe.com/4gMbJ1fl5bon6zDaOdbjW06", // Live coaching, 2 hours + private   $115.00
     "vod-private":      "https://book.stripe.com/3cI9ATc8T3VV2jn1dDbjW07", // VOD review + private               $35.00
-  },
-
-  // $1 test purchase for checking the whole booking flow yourself.
-  // The button only appears when the site is opened with ?test=1 on the end,
-  // e.g. https://teslacoaching.com/?test=1 . Customers never see it.
-  testPurchase: {
-    price: 1,
-    link: "https://book.stripe.com/9B66oHfl5gIH2jn6xXbjW08", // Test payment $1.00
   },
 };
 
@@ -285,7 +287,6 @@ function renderTimes() {
 }
 
 function total() {
-  if (state.test) return CONFIG.testPurchase.price;
   const base = state.service === "live" ? CONFIG.prices.liveHourly * state.duration : CONFIG.prices.vod;
   return base + (state.private ? CONFIG.prices.privateAddon : 0);
 }
@@ -386,8 +387,9 @@ function stripeReference() {
   return ref;
 }
 
+// Backup payment link for the current selection (never used for test bookings)
 function paymentUrl() {
-  const link = state.test ? CONFIG.testPurchase.link : CONFIG.paymentLinks[paymentKey()];
+  const link = state.test ? "" : CONFIG.paymentLinks[paymentKey()];
   if (!link) return null;
   try {
     const url = new URL(link);
@@ -441,7 +443,7 @@ function fmtWhen(iso, timeZone) {
 // (the emails are written by the bookings sheet script)
 function orderRows(b) {
   const rows = [];
-  if (b.test) rows.push(["Test purchase", "Not a real booking"]);
+  if (b.test) rows.push(["Test booking", "Stripe test mode, no real charge"]);
   rows.push(["Service", b.service]);
   if (b.length) rows.push(["Length", b.length]);
   if (b.start) rows.push(["When", fmtWhen(b.start, b.timeZone)]);
@@ -466,34 +468,43 @@ function orderRows(b) {
 //   "processing" - paid by a method that hasn't cleared yet (e.g. bank)
 //   "invalid"    - the booking details don't make sense (won't ever work)
 //   "error"      - couldn't reach the sheet or Stripe; try again later
-async function confirmBooking(b) {
+async function confirmBooking(b, sessionId) {
+  return askSheet({
+    action: "confirm",
+    sessionId: sessionId || undefined, // embedded checkout: the sheet looks it up directly
+    booking: b ? bookingPayload(b) : undefined, // payment-link backup: matched by reference
+  });
+}
+
+// The booking fields the bookings sheet needs
+function bookingPayload(b) {
+  return {
+    id: b.id,
+    kind: b.kind || (b.start ? "live" : "vod"),
+    test: b.test,
+    private: b.private,
+    minutes: b.minutes,
+    start: b.start,
+    name: b.name,
+    email: b.email,
+    discord: b.discord,
+    rank: b.rank,
+    replayCode: b.replayCode,
+    ign: b.ign,
+    notes: b.notes,
+    timeZone: b.timeZone,
+  };
+}
+
+// POST to the bookings sheet. Always resolves to an object with a status
+// (or ok: true); network problems come back as { status: "error" }.
+async function askSheet(body) {
   if (!CONFIG.bookingsUrl) return { status: "error" };
   try {
     // sent as plain text so the browser doesn't need a pre-check Google can't answer
-    const res = await fetch(CONFIG.bookingsUrl, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "confirm",
-        booking: {
-          id: b.id,
-          kind: b.kind || (b.start ? "live" : "vod"),
-          test: b.test,
-          private: b.private,
-          minutes: b.minutes,
-          start: b.start,
-          name: b.name,
-          email: b.email,
-          discord: b.discord,
-          rank: b.rank,
-          replayCode: b.replayCode,
-          ign: b.ign,
-          notes: b.notes,
-          timeZone: b.timeZone,
-        },
-      }),
-    });
+    const res = await fetch(CONFIG.bookingsUrl, { method: "POST", body: JSON.stringify(body) });
     const data = await res.json();
-    return data && data.status ? data : { status: "error" };
+    return data && (data.ok || data.status) ? data : { status: "error" };
   } catch {
     return { status: "error" };
   }
@@ -518,23 +529,25 @@ const PENDING_MAX_DAYS = 7; // stop retrying a booking after this long
 // Stripe sends the customer back, and again on later visits if it couldn't
 // be confirmed yet (sheet unreachable, or a bank payment still clearing).
 let confirming = null;
-function confirmPaidBooking(quickRetries = 0) {
+function confirmPaidBooking(quickRetries = 0, sessionId = "") {
   if (confirming) return confirming;
   confirming = (async () => {
-    const b = loadPending();
-    if (!b || !b.paid) return null;
-    if (b.createdAt && Date.now() - Date.parse(b.createdAt) > PENDING_MAX_DAYS * 86400000) {
+    let b = loadPending();
+    if (b && !b.paid && !sessionId) b = null; // never got as far as paying
+    if (b && b.createdAt && Date.now() - Date.parse(b.createdAt) > PENDING_MAX_DAYS * 86400000) {
       clearPending();
-      return null;
+      b = null;
     }
+    const sid = sessionId || (b && b.sessionId) || "";
+    if (!b && !sid) return null;
     let result = { status: "error" };
     for (let attempt = 0; attempt <= quickRetries; attempt++) {
       if (attempt) await sleep(3000);
-      result = await confirmBooking(b);
+      result = await confirmBooking(b, sid);
       if (result.status !== "not_paid" && result.status !== "error") break;
     }
     if (result.status === "confirmed" || result.status === "invalid") clearPending();
-    if (result.status === "confirmed" && b.start) loadBooked(); // grey the time out here too
+    if (result.status === "confirmed") loadBooked(); // grey the time out here too
     return { ...result, booking: b };
   })().finally(() => { confirming = null; });
   return confirming;
@@ -542,17 +555,21 @@ function confirmPaidBooking(quickRetries = 0) {
 
 /* ---------- Order review popup ---------- */
 
+let currentBooking = null; // the order shown in the review popup
+
 function openModal() {
   state.bookingId = newBookingId();
   const booking = buildBooking();
-  const pay = paymentUrl();
+  currentBooking = booking;
+  const pay = paymentUrl(); // backup payment link
+  const embedded = embeddedReady(booking.test);
 
   const list = $("#order-list");
   list.innerHTML = "";
   for (const [k, v] of orderRows(booking)) {
     const row = document.createElement("div");
     if (k === "Total") row.className = "order-total";
-    if (k === "Test purchase") row.className = "order-test";
+    if (k === "Test booking") row.className = "order-test";
     const dt = document.createElement("dt");
     const dd = document.createElement("dd");
     dt.textContent = k;
@@ -561,13 +578,18 @@ function openModal() {
     list.appendChild(row);
   }
 
-  $("#modal-pay").parentElement.hidden = !pay;
-  if (pay) {
-    $("#modal-intro").textContent = "Check everything looks right, then continue to Stripe to pay.";
-    $("#modal-pay").href = pay;
-    $("#modal-pay").textContent = `Continue to payment with Stripe (${money(booking.total)})`;
+  showPayStep(false);
+  $("#pay-error").textContent = "";
+  $("#modal-pay").parentElement.hidden = !(embedded || pay);
+  if (embedded || pay) {
+    $("#modal-intro").textContent = "Check everything looks right, then continue to payment.";
+    $("#modal-pay").href = pay || "#";
+    $("#modal-pay").textContent = `Continue to payment (${money(booking.total)})`;
+    $("#modal-note").textContent = embedded
+      ? "You'll pay securely with Stripe right here, then get your confirmation number. Your booking details are emailed to you once payment goes through."
+      : "After paying you'll come back here and get your confirmation number. Your booking details are emailed to you once payment goes through.";
     $("#modal-note").hidden = false;
-    savePending(booking); // confirmed (and emailed) only after Stripe sends them back paid
+    savePending(booking); // confirmed (and emailed) only after payment goes through
   } else {
     $("#modal-intro").innerHTML = `Online payment isn't available for this option yet. Please email <a href="mailto:${CONFIG.contactEmail}">${CONFIG.contactEmail}</a> to book it.`;
     $("#modal-note").hidden = true;
@@ -575,6 +597,105 @@ function openModal() {
 
   $("#modal").hidden = false;
   $("#modal-close").focus();
+}
+
+/* ---------- Stripe's payment form inside the popup (embedded checkout) ---------- */
+
+const stripeKeyFor = (test) => (test ? CONFIG.stripeTestPublishableKey : CONFIG.stripePublishableKey);
+const embeddedReady = (test) => !!(stripeKeyFor(test) && CONFIG.bookingsUrl);
+
+// Load Stripe.js from Stripe (it must come from js.stripe.com)
+function loadStripeJs() {
+  if (document.getElementById("stripe-js")) return;
+  const s = document.createElement("script");
+  s.id = "stripe-js";
+  s.src = "https://js.stripe.com/endive/stripe.js";
+  s.async = true;
+  document.head.appendChild(s);
+}
+async function waitForStripe(ms = 10000) {
+  loadStripeJs();
+  const until = Date.now() + ms;
+  while (typeof window.Stripe !== "function") {
+    if (Date.now() > until) return false;
+    await sleep(100);
+  }
+  return true;
+}
+
+const stripeClients = {};
+let embeddedCheckout = null;
+let payAttempt = 0; // bumped whenever the popup closes or goes back, to cancel slow loads
+
+function destroyEmbedded() {
+  if (embeddedCheckout) {
+    try { embeddedCheckout.destroy(); } catch { /* already gone */ }
+    embeddedCheckout = null;
+  }
+  $("#embedded-checkout").innerHTML = "";
+}
+
+function showPayStep(on) {
+  $("#review-step").hidden = on;
+  $("#pay-step").hidden = !on;
+  $("#modal .modal-card").classList.toggle("paying", on);
+  $("#checkout-loading").hidden = !on;
+}
+
+async function startEmbeddedPayment(booking, backupUrl) {
+  const attempt = ++payAttempt;
+  destroyEmbedded();
+  $("#pay-error").textContent = "";
+  showPayStep(true);
+
+  const [stripeLoaded, data] = await Promise.all([
+    waitForStripe(),
+    askSheet({ action: "checkout", booking: bookingPayload(booking) }),
+  ]);
+  if (attempt !== payAttempt) return; // closed or went back meanwhile
+
+  if (data.status === "taken") {
+    closeModal();
+    await loadBooked();
+    showError("Sorry, someone just booked that time. Please pick another one.");
+    $("#time-grid").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  const failed = (message) => {
+    if (backupUrl) {
+      location.href = backupUrl; // fall back to the Stripe payment link
+      return;
+    }
+    showPayStep(false);
+    $("#pay-error").textContent = message;
+  };
+  if (!stripeLoaded || !data.ok || !data.clientSecret) {
+    failed(`Checkout couldn't load. Please try again in a moment, or email ${CONFIG.contactEmail}.`);
+    return;
+  }
+
+  booking.sessionId = data.sessionId;
+  savePending(booking);
+  try {
+    const key = stripeKeyFor(booking.test);
+    stripeClients[key] = stripeClients[key] || window.Stripe(key);
+    const checkout = await stripeClients[key].createEmbeddedCheckoutPage({
+      fetchClientSecret: async () => data.clientSecret,
+    });
+    if (attempt !== payAttempt) {
+      checkout.destroy();
+      return;
+    }
+    embeddedCheckout = checkout;
+    $("#checkout-loading").hidden = true;
+    checkout.mount("#embedded-checkout");
+  } catch (err) {
+    console.error(err);
+    if (attempt === payAttempt) {
+      destroyEmbedded();
+      failed(`Checkout couldn't load. Please try again in a moment, or email ${CONFIG.contactEmail}.`);
+    }
+  }
 }
 
 /* ---------- Back from Stripe (?paid=1) ---------- */
@@ -590,13 +711,14 @@ const PAID_MESSAGES = {
   unknown: ["Payment received. Thank you!", "I'll email you shortly with your booking information.", true],
 };
 
-function showPaidMessage(status, booking, email) {
+// `id` is the confirmation number (blank if unknown), `email` where it was sent
+function showPaidMessage(status, id, email) {
   const [title, note, showHelp] = PAID_MESSAGES[status] || PAID_MESSAGES.error;
   $("#paid-title").textContent = title;
-  $("#paid-email-note").textContent = note.replace("{email}", email || (booking && booking.email) || "your email");
+  $("#paid-email-note").textContent = note.replace("{email}", email || "your email");
   $("#paid-help").hidden = !showHelp;
-  $("#paid-number-row").hidden = !booking;
-  $("#paid-number").textContent = booking ? booking.id : "";
+  $("#paid-number-row").hidden = !id;
+  $("#paid-number").textContent = id || "";
   $("#paid-modal").hidden = false;
 }
 
@@ -606,31 +728,41 @@ async function handlePaymentReturn() {
     confirmPaidBooking(); // quietly retry anything left over from an earlier visit
     return;
   }
+  // Embedded checkout comes back with ?session_id=cs_...; payment links don't
+  const sessionId = params.get("session_id") || "";
   // tidy the address bar so a refresh doesn't show this again
   params.delete("paid");
+  params.delete("session_id");
   const qs = params.toString();
   history.replaceState(null, "", location.pathname + (qs ? `?${qs}` : "") + location.hash);
 
-  const b = loadPending();
-  if (!b) {
-    showPaidMessage("unknown", null); // paid on another device, or storage blocked
+  let b = loadPending();
+  if (b && sessionId && b.sessionId && b.sessionId !== sessionId) b = null; // a different booking
+  if (!b && !sessionId) {
+    showPaidMessage("unknown", ""); // paid on another device, or storage blocked
     $("#paid-close").focus();
     return;
   }
-  if (!b.paid) {
+  if (b && !b.paid) {
     b.paid = true;
     b.paidAt = new Date().toISOString();
+    if (sessionId) b.sessionId = sessionId;
     savePending(b);
   }
-  showPaidMessage("checking", b);
+  showPaidMessage("checking", b ? b.id : "");
   $("#paid-close").focus();
-  const result = await confirmPaidBooking(2);
-  showPaidMessage(result ? result.status : "error", b, result && result.email);
+  const result = await confirmPaidBooking(2, sessionId);
+  showPaidMessage(result ? result.status : "error",
+    (result && result.id) || (b && b.id) || "",
+    (result && result.email) || (b && b.email) || "");
 }
 function closePaidMessage() {
   $("#paid-modal").hidden = true;
 }
 function closeModal() {
+  payAttempt++; // cancel a checkout that's still loading
+  destroyEmbedded();
+  showPayStep(false);
   $("#modal").hidden = true;
   $("#submit-btn").focus();
 }
@@ -1070,18 +1202,37 @@ document.addEventListener("DOMContentLoaded", () => {
     startCheckout(false);
   });
 
-  // $1 test purchase: same form, same emails, but charges the test link.
-  // Only shown when the page is opened with ?test=1.
+  // Test booking: the whole flow in Stripe's TEST mode (no real charge).
+  // Only shown when the page is opened with ?test=1 and a test key is set.
   const testBtn = $("#test-btn");
-  if (new URLSearchParams(location.search).get("test") === "1" && CONFIG.testPurchase.link) {
+  const testMode = new URLSearchParams(location.search).get("test") === "1" && embeddedReady(true);
+  if (testMode) {
     testBtn.hidden = false;
-    testBtn.textContent = `Test purchase (${money(CONFIG.testPurchase.price)})`;
+    testBtn.textContent = "Test booking (no real charge)";
   }
   testBtn.addEventListener("click", () => startCheckout(true));
 
+  // Start loading Stripe early so the payment form opens quickly
+  if (embeddedReady(false) || testMode) loadStripeJs();
+
   // modal
   $("#modal-close").addEventListener("click", closeModal);
-  $("#modal").addEventListener("click", (e) => { if (e.target.id === "modal") closeModal(); });
+  // clicking the dark background closes the review, but not the payment form
+  $("#modal").addEventListener("click", (e) => {
+    if (e.target.id === "modal" && $("#pay-step").hidden) closeModal();
+  });
+  $("#modal-pay").addEventListener("click", (e) => {
+    const b = currentBooking;
+    if (!b || !embeddedReady(b.test)) return; // no embedded form: follow the payment link
+    e.preventDefault();
+    const backup = $("#modal-pay").getAttribute("href");
+    startEmbeddedPayment(b, backup && backup !== "#" ? backup : "");
+  });
+  $("#pay-back").addEventListener("click", () => {
+    payAttempt++;
+    destroyEmbedded();
+    showPayStep(false);
+  });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!$("#modal").hidden) closeModal();

@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=e6a49d78">
+  <link rel="stylesheet" href="styles.css?v=c1c58141">
 </head>
 <body>
 
@@ -669,7 +669,7 @@
               <strong id="sum-total">$55.00</strong>
             </div>
             <button type="submit" class="btn btn-block" id="submit-btn">Confirm and Pay</button>
-            <!-- Only shown at teslacoaching.com/?test=1 (see testPurchase in script.js) -->
+            <!-- Only shown at teslacoaching.com/?test=1 when a Stripe test key is set (script.js) -->
             <button type="button" class="btn btn-ghost btn-block test-btn" id="test-btn" hidden>Test purchase</button>
             <p class="form-error" id="form-error" role="alert"></p>
             <p class="fine-print">Secure checkout with Stripe. Free reschedule with 24 hours' notice.</p>
@@ -732,13 +732,25 @@
   <!-- Order review: shown after "Confirm and Pay", before going to Stripe -->
   <div class="modal" id="modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <h3 id="modal-title">Review your order</h3>
-      <p class="muted" id="modal-intro">Check everything looks right, then continue to Stripe to pay.</p>
-      <dl class="order-list" id="order-list"></dl>
-      <div class="modal-actions">
-        <a class="btn btn-block" id="modal-pay" href="#">Continue to payment with Stripe</a>
+      <!-- Step 1: review the order -->
+      <div id="review-step">
+        <h3 id="modal-title">Review your order</h3>
+        <p class="muted" id="modal-intro">Check everything looks right, then continue to payment.</p>
+        <dl class="order-list" id="order-list"></dl>
+        <p class="form-error" id="pay-error" role="alert"></p>
+        <div class="modal-actions">
+          <a class="btn btn-block" id="modal-pay" href="#">Continue to payment</a>
+        </div>
+        <p class="fine-print modal-note" id="modal-note"></p>
       </div>
-      <p class="fine-print modal-note" id="modal-note">After paying you'll come back here and get your confirmation number. Your booking details are emailed to you once payment goes through.</p>
+      <!-- Step 2: Stripe's payment form, shown right here (embedded checkout) -->
+      <div id="pay-step" hidden>
+        <button class="back-link" id="pay-back" type="button">&larr; Back to your order</button>
+        <div class="checkout-frame">
+          <p class="checkout-loading" id="checkout-loading" hidden>Loading secure checkout…</p>
+          <div id="embedded-checkout"></div>
+        </div>
+      </div>
       <button class="modal-close" id="modal-close" type="button" aria-label="Close">&times;</button>
     </div>
   </div>
@@ -761,6 +773,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=edd38d6c"></script>
+  <script src="script.js?v=6c677699"></script>
 </body>
 </html>
