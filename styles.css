@@ -392,7 +392,12 @@ legend { font-family: var(--font-head); font-size: 1.25rem; font-weight: 700; ma
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
   font-family: var(--font-body); font-weight: 500; cursor: pointer; transition: all 0.15s;
 }
-.time-btn:hover { border-color: var(--purple); }
+.time-btn:hover:not(:disabled) { border-color: var(--purple); }
+/* Booked (or would overlap a booking): greyed out and not clickable */
+.time-btn.taken {
+  opacity: 0.35; cursor: not-allowed;
+  background: transparent; text-decoration: line-through;
+}
 .time-btn[aria-pressed="true"] { border-color: var(--gold); background: rgba(242, 193, 78, 0.14); color: var(--gold-soft); }
 .date-btn:focus-visible, .time-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 

@@ -32,9 +32,11 @@ const CONFIG = {
   daysAhead: 14,        // how far out people can book
   minNoticeHours: 12,   // no bookings sooner than this
 
-  // Already-booked start times, as ISO strings in UTC, e.g. "2026-11-12T23:00:00Z".
-  // (Later this will come from your real booking system.)
-  bookedSlots: [],
+  // Booked times live in your bookings Google Sheet (see BOOKINGS-SETUP.md).
+  // Paste its web app URL here. Booked times, and any start time whose
+  // session would overlap one, show greyed out. Paid live sessions are added
+  // to the sheet automatically. Leave "" to turn this off.
+  bookingsUrl: "https://script.google.com/macros/s/AKfycbxC6CsTotgpFHxQbm1X8MThDjTHx-r0hIle6prtniFphtHl_HwsEMqnfiA0Kyof1-SB/exec",
 
   // Both emails below are sent only after the customer pays: Stripe sends them
   // back to the site (?paid=1) and the site emails the booking they just paid for.
@@ -121,7 +123,6 @@ const localDateKey = (date) =>
 function generateSlots(durationHours) {
   const durationMin = durationHours * 60;
   const earliest = Date.now() + CONFIG.minNoticeHours * 3600000;
-  const booked = new Set(CONFIG.bookedSlots.map((s) => new Date(s).getTime()));
   const start = todayInZone(CONFIG.coachTimeZone);
   const slots = [];
 
@@ -138,12 +139,56 @@ function generateSlots(durationHours) {
 
       for (let t = winStart; t + durationMin <= winEnd; t += CONFIG.slotStepMinutes) {
         const date = zonedTimeToDate(y, m, d, Math.floor(t / 60), t % 60, CONFIG.coachTimeZone);
-        if (date.getTime() < earliest || booked.has(date.getTime())) continue;
+        if (date.getTime() < earliest) continue;
         slots.push(date);
       }
     }
   }
   return slots;
+}
+
+/* ---------- Booked times (from the bookings Google Sheet) ---------- */
+
+let bookedRanges = []; // [{ start, end }] in milliseconds
+
+// Ask the sheet which times are booked. Resolves to the ranges, or null if
+// it isn't set up or can't be reached (then nothing is greyed out).
+async function fetchBooked() {
+  if (!CONFIG.bookingsUrl) return null;
+  try {
+    const res = await fetch(CONFIG.bookingsUrl, { cache: "no-store" });
+    const data = await res.json();
+    if (!data.ok || !Array.isArray(data.booked)) return null;
+    return data.booked
+      .map((b) => ({ start: Date.parse(b.start), end: Date.parse(b.end) }))
+      .filter((r) => r.start < r.end);
+  } catch {
+    return null;
+  }
+}
+
+async function loadBooked() {
+  const ranges = await fetchBooked();
+  if (!ranges) return;
+  bookedRanges = ranges;
+  rebuildSlots();
+  updateSummary();
+}
+
+// Would a session starting at `start` overlap anything already booked?
+function isTaken(start, durationMin = state.duration * 60) {
+  const s = start.getTime();
+  const e = s + durationMin * 60000;
+  return bookedRanges.some((r) => s < r.end && e > r.start);
+}
+
+// Re-check right before checkout in case someone else just booked it.
+async function slotStillFree() {
+  if (state.service !== "live" || !state.slot) return true;
+  const ranges = await fetchBooked();
+  if (!ranges) return true; // can't check right now: let them continue
+  bookedRanges = ranges;
+  return !isTaken(state.slot);
 }
 
 /* ---------- Booking widget ---------- */
@@ -173,12 +218,14 @@ function rebuildSlots() {
     if (!slotsByDay.has(key)) slotsByDay.set(key, []);
     slotsByDay.get(key).push(s);
   }
-  // keep current selection only if it still exists
-  if (state.slot && !(slotsByDay.get(state.dateKey) || []).some((s) => s.getTime() === state.slot.getTime())) {
+  // keep current selection only if it still exists and is still free
+  if (state.slot && (isTaken(state.slot) ||
+      !(slotsByDay.get(state.dateKey) || []).some((s) => s.getTime() === state.slot.getTime()))) {
     state.slot = null;
   }
-  if (state.dateKey && !slotsByDay.has(state.dateKey)) state.dateKey = null;
-  if (!state.dateKey) state.dateKey = slotsByDay.keys().next().value || null;
+  const hasOpen = (key) => (slotsByDay.get(key) || []).some((s) => !isTaken(s));
+  if (state.dateKey && !hasOpen(state.dateKey)) state.dateKey = null;
+  if (!state.dateKey) state.dateKey = [...slotsByDay.keys()].find(hasOpen) || null;
   renderDates();
   renderTimes();
 }
@@ -193,7 +240,9 @@ function renderDates() {
     const day = new Date(today);
     day.setDate(today.getDate() + i);
     const key = localDateKey(day);
-    const hasSlots = slotsByDay.has(key);
+    const daySlots = slotsByDay.get(key) || [];
+    const hasSlots = daySlots.some((s) => !isTaken(s));
+    const fullyBooked = daySlots.length > 0 && !hasSlots;
 
     const btn = document.createElement("button");
     btn.type = "button";
@@ -203,7 +252,8 @@ function renderDates() {
     btn.disabled = !hasSlots;
     btn.dataset.key = key;
     btn.innerHTML = `<span class="dow">${fmtDow.format(day)}</span><span class="day">${day.getDate()}</span><span class="mon">${fmtMon.format(day)}</span>`;
-    btn.setAttribute("aria-label", `${day.toDateString()}${hasSlots ? "" : " (unavailable)"}`);
+    btn.setAttribute("aria-label", `${day.toDateString()}${hasSlots ? "" : fullyBooked ? " (fully booked)" : " (unavailable)"}`);
+    if (fullyBooked) btn.title = "Fully booked";
     btn.addEventListener("click", () => {
       state.dateKey = key;
       state.slot = null;
@@ -229,6 +279,14 @@ function renderTimes() {
     btn.type = "button";
     btn.className = "time-btn";
     btn.textContent = fmtTime.format(s);
+    if (isTaken(s)) {
+      btn.disabled = true;
+      btn.classList.add("taken");
+      btn.title = "Already booked";
+      btn.setAttribute("aria-label", `${fmtTime.format(s)}, booked`);
+      grid.appendChild(btn);
+      continue;
+    }
     btn.setAttribute("aria-pressed", String(state.slot && state.slot.getTime() === s.getTime()));
     btn.addEventListener("click", () => {
       state.slot = s;
@@ -359,6 +417,7 @@ function buildBooking() {
     service: live ? "Live Coaching" : "VOD Review",
     length: live ? durationLabel(state.duration) : "",
     start: live ? state.slot.toISOString() : "",
+    minutes: live ? Math.round(state.duration * 60) : 0,
     replayCode: live ? "" : $("#replay-code").value.trim(),
     notes: live ? "" : $("#vod-notes").value.trim(),
     private: state.private,
@@ -371,6 +430,7 @@ function buildBooking() {
     reference: stripeReference(),
     createdAt: new Date().toISOString(),
     paid: false,
+    slotSaved: false,
     coachSent: false,
     customerSent: false,
   };
@@ -416,7 +476,11 @@ function coachText(b) {
   lines.push(`Private (do not post): ${b.private ? "Yes" : "No"}`, "");
   lines.push(`Name: ${b.name}`, `Email: ${b.email}`, `Discord: ${b.discord}`);
   lines.push(`Rank: ${b.rank}`, `Time zone: ${b.timeZone}`);
-  if (b.start) lines.push("", `To block this time slot, add "${b.start}" to bookedSlots in script.js.`);
+  if (b.start) {
+    lines.push("", CONFIG.bookingsUrl
+      ? "This time is now greyed out on the website. To free it again (cancellation or reschedule), delete its row in your bookings sheet."
+      : "Booked times aren't set up yet (see BOOKINGS-SETUP.md), so this time is still open on the website.");
+  }
   return lines.join("\n");
 }
 
@@ -496,6 +560,32 @@ async function sendCustomerEmail(b) {
   }
 }
 
+// Add a paid live session to the bookings sheet so its time greys out
+async function saveBookedSlot(b) {
+  if (!b.start || !CONFIG.bookingsUrl) return true; // VOD, or not set up
+  const minutes = b.minutes || 60;
+  try {
+    // sent as plain text so the browser doesn't need a pre-check Google can't answer
+    const res = await fetch(CONFIG.bookingsUrl, {
+      method: "POST",
+      body: JSON.stringify({
+        id: b.id,
+        start: b.start,
+        end: new Date(Date.parse(b.start) + minutes * 60000).toISOString(),
+        service: `${b.service} ${b.length}`,
+        name: b.name,
+        discord: b.discord,
+        test: b.test,
+      }),
+    });
+    const data = await res.json();
+    // "invalid booking" won't ever succeed, so don't keep retrying it
+    return !!data.ok || data.error === "invalid booking";
+  } catch {
+    return false;
+  }
+}
+
 // The booking waiting for payment, kept in this browser
 const PENDING_KEY = "pendingBooking";
 function loadPending() {
@@ -516,9 +606,14 @@ async function deliverPaidBooking() {
   if (!b || !b.paid || delivering) return;
   delivering = true;
   try {
+    if (!b.slotSaved) {
+      b.slotSaved = await saveBookedSlot(b);
+      savePending(b);
+      if (b.slotSaved) loadBooked(); // grey it out here too
+    }
     if (!b.coachSent) { b.coachSent = await sendCoachEmail(b); savePending(b); }
     if (!b.customerSent) { b.customerSent = await sendCustomerEmail(b); savePending(b); }
-    if (b.coachSent && b.customerSent) clearPending();
+    if (b.slotSaved && b.coachSent && b.customerSent) clearPending();
   } finally {
     delivering = false;
   }
@@ -1002,10 +1097,31 @@ document.addEventListener("DOMContentLoaded", () => {
   $$("#booking-form input, #booking-form textarea").forEach((el) =>
     el.addEventListener("input", () => el.classList.remove("invalid")));
 
+  // Check the form, make sure the time wasn't just taken, then show the order.
+  async function startCheckout(test) {
+    if (!validate()) return;
+    const buttons = [$("#submit-btn"), $("#test-btn")];
+    buttons.forEach((b) => (b.disabled = true));
+    const free = await slotStillFree();
+    buttons.forEach((b) => (b.disabled = false));
+    if (!free) {
+      rebuildSlots();
+      updateSummary();
+      showError("Sorry, someone just booked that time. Please pick another one.");
+      $("#time-grid").scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    state.test = test;
+    try {
+      openModal();
+    } finally {
+      state.test = false; // back to normal prices for everything else
+    }
+  }
+
   $("#booking-form").addEventListener("submit", (e) => {
     e.preventDefault();
-    state.test = false;
-    if (validate()) openModal();
+    startCheckout(false);
   });
 
   // $1 test purchase: same form, same emails, but charges the test link.
@@ -1015,14 +1131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     testBtn.hidden = false;
     testBtn.textContent = `Test purchase (${money(CONFIG.testPurchase.price)})`;
   }
-  testBtn.addEventListener("click", () => {
-    state.test = true;
-    try {
-      if (validate()) openModal();
-    } finally {
-      state.test = false; // back to normal prices for everything else
-    }
-  });
+  testBtn.addEventListener("click", () => startCheckout(true));
 
   // modal
   $("#modal-close").addEventListener("click", closeModal);
@@ -1072,4 +1181,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initCarousel();
   rebuildSlots();
   updateSummary();
+  loadBooked(); // grey out booked times once the sheet answers
 });
