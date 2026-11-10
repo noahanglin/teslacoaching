@@ -430,8 +430,6 @@ legend { font-family: var(--font-head); font-size: 1.25rem; font-weight: 700; ma
 .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
 .input-row:last-child { margin-bottom: 0; }
 .input-label { display: block; font-size: 0.88rem; color: var(--muted); margin: 0 0 6px; }
-.input-hint { display: block; font-size: 0.8rem; line-height: 1.45; color: var(--muted); margin-top: 6px; }
-.discord-hint { margin: -6px 0 14px; }
 input[type="text"], input[type="email"], select, textarea {
   width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--bg); color: var(--text);
