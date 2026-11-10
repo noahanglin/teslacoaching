@@ -1263,6 +1263,7 @@ function initTestTools(bookedLoaded) {
 // While someone is filling in the booking form on a phone, keep the total and
 // a Confirm and Pay button pinned to the bottom of the screen. It hides once
 // the form's own button is on screen, on wider screens, and while a popup is open.
+let paybarHeight = 80; // measured once the bar is showing (it's 0 while hidden)
 function updatePaybar() {
   const bar = $("#paybar");
   const vh = window.innerHeight || document.documentElement.clientHeight;
@@ -1270,11 +1271,20 @@ function updatePaybar() {
     if (bar) bar.hidden = true;
     return;
   }
+  if (!bar.hidden && bar.offsetHeight) paybarHeight = bar.offsetHeight;
   const book = $("#book").getBoundingClientRect();
   const btn = $("#submit-btn").getBoundingClientRect();
   const inBooking = book.top < vh * 0.6 && book.bottom > vh * 0.5;
-  const buttonOnScreen = btn.top < vh && btn.bottom > 0;
-  bar.hidden = !(inBooking && !buttonOnScreen);
+  // A gap between "show" and "hide" so the bar can't flicker at the edge
+  // (phone browsers change the screen height slightly while scrolling): it
+  // appears once the form's button is fully off screen, and goes away only
+  // once that button has come up clear of the bar.
+  const offScreen = btn.top >= vh || btn.bottom <= 0;
+  const clearOfBar = btn.top <= vh - paybarHeight - 12 && btn.bottom >= 12;
+  if (!inBooking) bar.hidden = true;
+  else if (offScreen) bar.hidden = false;
+  else if (clearOfBar) bar.hidden = true;
+  // in between: keep it as it is
 }
 
 function initPaybar() {
