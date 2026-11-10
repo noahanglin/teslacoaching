@@ -23,7 +23,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=61392efc">
+  <link rel="stylesheet" href="styles.css?v=249a706e">
 </head>
 <body>
 
@@ -106,21 +106,24 @@
                   <circle r="46" fill="url(#dmg-edge)"/>
                 </mask>
                 <!-- roughens the orb's outline into smoky, hair-like wisps -->
-                <filter id="dmg-smoke" filterUnits="userSpaceOnUse" x="-90" y="-90" width="180" height="180">
+                <!-- Filter areas are sized tightly to what they blur (each blur only
+                     needs ~3x its blur radius of extra room). Smaller areas = less GPU work. -->
+                <filter id="dmg-smoke" filterUnits="userSpaceOnUse" x="-80" y="-80" width="160" height="160">
                   <feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="2" seed="7" result="n"/>
                   <feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="G" result="d"/>
                   <feGaussianBlur in="d" stdDeviation="1.8"/>
                 </filter>
                 <filter id="dmg-tb" filterUnits="userSpaceOnUse" x="-260" y="-260" width="520" height="520"><feGaussianBlur stdDeviation="3"/></filter>
-                <filter id="dmg-b1" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="1.2"/></filter>
-                <filter id="dmg-b2" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="2.2"/></filter>
-                <filter id="dmg-b6" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="6"/></filter>
+                <!-- swirl arms (clipped to r46 by the mask) / the bright centre dot / the haze (r up to 57) -->
+                <filter id="dmg-b2" filterUnits="userSpaceOnUse" x="-56" y="-56" width="112" height="112"><feGaussianBlur stdDeviation="2.2"/></filter>
+                <filter id="dmg-b2-dot" filterUnits="userSpaceOnUse" x="-13" y="-11" width="28" height="28"><feGaussianBlur stdDeviation="2.2"/></filter>
+                <filter id="dmg-b6" filterUnits="userSpaceOnUse" x="-76" y="-76" width="152" height="152"><feGaussianBlur stdDeviation="6"/></filter>
               </defs>
 
               <g class="orb-body"><circle r="110" fill="url(#dmg-glow)"/></g>
 
               <!-- tendril that latches onto the cursor (driven by script.js) -->
-              <g class="tether" opacity="0">
+              <g class="tether" opacity="0" style="display:none">
                 <g class="tether-glows" fill="#c04dff" opacity="0.95" filter="url(#dmg-tb)"></g>
                 <g class="tether-cores" fill="#f7ebff"></g>
                 <g class="tether-sparks" fill="#f0d6ff"></g>
@@ -178,7 +181,7 @@
                   </g>
                 </g>
 
-                <circle cx="1" cy="3" r="6" fill="#fdf6ff" filter="url(#dmg-b2)">
+                <circle cx="1" cy="3" r="6" fill="#fdf6ff" filter="url(#dmg-b2-dot)">
                   <animate attributeName="opacity" values="0.6;1;0.6" dur="2.2s" repeatCount="indefinite"/>
                 </circle>
               </g>
@@ -222,7 +225,8 @@
                 <mask id="heal-mask" maskUnits="userSpaceOnUse" x="-50" y="-50" width="100" height="100">
                   <circle r="46" fill="url(#heal-edge)"/>
                 </mask>
-                <filter id="heal-b1" filterUnits="userSpaceOnUse" x="-60" y="-60" width="120" height="120"><feGaussianBlur stdDeviation="1.4"/></filter>
+                <!-- Filter areas are sized tightly to what they blur (see the damage orb) -->
+                <filter id="heal-b1" filterUnits="userSpaceOnUse" x="-51" y="-51" width="102" height="102"><feGaussianBlur stdDeviation="1.4"/></filter>
                 <!-- "gooey" filter: blurs moving blobs then sharpens the edges so they merge like liquid -->
                 <filter id="heal-goo" filterUnits="userSpaceOnUse" x="-50" y="-50" width="100" height="100">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3.2" result="b"/>
@@ -230,8 +234,11 @@
                   <feGaussianBlur in="g" stdDeviation="0.5"/>
                 </filter>
                 <filter id="heal-tb" filterUnits="userSpaceOnUse" x="-260" y="-260" width="520" height="520"><feGaussianBlur stdDeviation="3"/></filter>
-                <filter id="heal-b2" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="2"/></filter>
-                <filter id="heal-b6" filterUnits="userSpaceOnUse" x="-120" y="-120" width="240" height="240"><feGaussianBlur stdDeviation="6"/></filter>
+                <!-- cream core (r up to 18.5) / swinging dark notch / glowing rim (r45) / halo (r50) -->
+                <filter id="heal-b2-core" filterUnits="userSpaceOnUse" x="-22" y="-28" width="52" height="52"><feGaussianBlur stdDeviation="2"/></filter>
+                <filter id="heal-b2-notch" filterUnits="userSpaceOnUse" x="-23" y="-35" width="42" height="37"><feGaussianBlur stdDeviation="2"/></filter>
+                <filter id="heal-b2" filterUnits="userSpaceOnUse" x="-54" y="-54" width="108" height="108"><feGaussianBlur stdDeviation="2"/></filter>
+                <filter id="heal-b6" filterUnits="userSpaceOnUse" x="-70" y="-70" width="140" height="140"><feGaussianBlur stdDeviation="6"/></filter>
               </defs>
 
               <g class="orb-body">
@@ -241,7 +248,7 @@
               </g>
 
               <!-- tendril that latches onto the cursor (driven by script.js) -->
-              <g class="tether" opacity="0">
+              <g class="tether" opacity="0" style="display:none">
                 <g class="tether-glows" fill="#e9dc1f" opacity="0.75" filter="url(#heal-tb)"></g>
                 <g class="tether-cores" fill="#fffbd6"></g>
                 <g class="tether-sparks" fill="#fff59a"></g>
@@ -298,10 +305,10 @@
               </g>
 
               <!-- hot cream core with a dark notch -->
-              <circle cx="4" cy="-2" r="17" fill="#fffef2" filter="url(#heal-b2)">
+              <circle cx="4" cy="-2" r="17" fill="#fffef2" filter="url(#heal-b2-core)">
                 <animate attributeName="r" values="16;18.5;16" dur="2.6s" repeatCount="indefinite"/>
               </circle>
-              <circle cx="-3" cy="-18" r="7.5" fill="#b8740c" filter="url(#heal-b2)">
+              <circle cx="-3" cy="-18" r="7.5" fill="#b8740c" filter="url(#heal-b2-notch)">
                 <animateTransform attributeName="transform" type="rotate" values="-20 4 -3;20 4 -3;-20 4 -3" dur="7s" repeatCount="indefinite"/>
               </circle>
 
@@ -860,6 +867,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=dfff4f20"></script>
+  <script src="script.js?v=77e9bd78"></script>
 </body>
 </html>

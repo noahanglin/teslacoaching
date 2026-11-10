@@ -152,6 +152,7 @@ p { margin: 0 0 1em; }
 .borb {
   position: absolute; pointer-events: none;
   animation: float 6s ease-in-out infinite;
+  will-change: transform; /* the float is done by the GPU without redrawing the orb */
 }
 .borb svg { display: block; width: 100%; height: auto; overflow: visible; }
 .borb-damage { width: 112%; top: -26%; left: -26%; }
@@ -160,6 +161,7 @@ p { margin: 0 0 1em; }
   position: absolute; inset: 0; border-radius: 50%;
   border: 1px dashed rgba(167, 159, 186, 0.3);
   animation: spin 40s linear infinite;
+  will-change: transform;
 }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 /* script.js adds this while a popup is open or the hero is out of view */

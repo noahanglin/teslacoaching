@@ -1029,12 +1029,39 @@ function setOrbPause(reason, on) {
   if (paused === orbsPaused) return;
   orbsPaused = paused;
   document.documentElement.classList.toggle("orbs-paused", paused); // pauses the CSS float/spin
-  if (!prefersReducedMotion) {                                       // (those stay frozen anyway)
-    $$(".hero-art svg").forEach((svg) => {
-      if (paused) svg.pauseAnimations && svg.pauseAnimations();
-      else svg.unpauseAnimations && svg.unpauseAnimations();
-    });
+  if (paused) stopOrbClock();
+  else startOrbClock();
+}
+
+// Orb animation clock. On their own, the orbs' built-in SVG animations
+// redraw on every screen refresh (60-144 times a second) and every redraw
+// re-runs all the smoke, goo and glow filters. The motions are slow (whole
+// turns take 12-48 seconds), so instead we hold the animations still and
+// step them ourselves ORB_FPS times a second: same look, a fraction of the work.
+const ORB_FPS = 30;
+let orbClockOn = false;
+let orbTime = 0;          // seconds of orb animation played so far
+let orbLastFrame = null;  // timestamp of the last animation frame
+let orbLastStep = 0;      // timestamp of the last redraw
+
+function orbTick(ts) {
+  if (!orbClockOn) return;
+  if (orbLastFrame !== null) orbTime += Math.min(100, ts - orbLastFrame) / 1000;
+  orbLastFrame = ts;
+  if (ts - orbLastStep >= 1000 / ORB_FPS - 2) {
+    orbLastStep = ts;
+    $$(".hero-art svg").forEach((svg) => svg.setCurrentTime && svg.setCurrentTime(orbTime));
   }
+  requestAnimationFrame(orbTick);
+}
+function startOrbClock() {
+  if (orbClockOn || prefersReducedMotion) return; // reduced motion: orbs stay still
+  orbClockOn = true;
+  orbLastFrame = null;
+  requestAnimationFrame(orbTick);
+}
+function stopOrbClock() {
+  orbClockOn = false;
 }
 
 function initOrbPausing() {
@@ -1059,6 +1086,14 @@ function initOrbPausing() {
   }
   // tab in the background?
   document.addEventListener("visibilitychange", () => setOrbPause("background", document.hidden));
+  // browser window not in use (you're working in another app)?
+  window.addEventListener("blur", () => setOrbPause("unfocused", true));
+  window.addEventListener("focus", () => setOrbPause("unfocused", false));
+  if (document.hasFocus && !document.hasFocus()) setOrbPause("unfocused", true);
+
+  // From now on the orbs only move when orbTick() steps them
+  $$(".hero-art svg").forEach((svg) => svg.pauseAnimations && svg.pauseAnimations());
+  if (!orbsPaused) startOrbClock();
 }
 
 /* ---------- Orb tendrils that latch onto the cursor ---------- */
@@ -1284,6 +1319,7 @@ function initOrbTethers() {
         o.latched = false;
         o.alpha = 0;
         o.group.setAttribute("opacity", "0");
+        o.group.style.display = "none";
       }
       running = false;
       return;
@@ -1331,6 +1367,9 @@ function initOrbTethers() {
       if (o.alpha < 0.01 && !o.latched) {
         o.alpha = 0;
         o.group.setAttribute("opacity", "0");
+        // fully remove it from drawing: its glow blur covers a huge area, and
+        // browsers may still run that blur on an invisible-but-present tendril
+        o.group.style.display = "none";
         continue;
       }
       busy = true;
@@ -1370,6 +1409,7 @@ function initOrbTethers() {
         f.setAttribute("height", (bounds.maxY - bounds.minY + pad * 2).toFixed(0));
       }
 
+      o.group.style.display = "";
       o.group.setAttribute("opacity", o.alpha.toFixed(3));
     }
 
