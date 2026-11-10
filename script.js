@@ -454,7 +454,7 @@ async function sendCoachEmail(b) {
       body: JSON.stringify({
         access_key: CONFIG.web3formsKey,
         subject: `${b.test ? "[TEST] " : ""}Paid booking ${b.id}: ${b.service}${b.length ? ` ${b.length}` : ""} ${money(b.total)}`,
-        from_name: "Tesla's Coaching",
+        from_name: "Tesla’s Coaching", // curly ’ (a straight ' gets mangled by email services)
         name: b.name,
         email: b.email, // replying to the email goes to the customer
         message: coachText(b),
