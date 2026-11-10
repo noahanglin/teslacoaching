@@ -23,7 +23,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=2e5724db">
+  <link rel="stylesheet" href="styles.css?v=b918feb2">
 </head>
 <body>
 
@@ -751,7 +751,7 @@
 
   <!-- Order review: shown after "Confirm and Pay", before going to Stripe -->
   <div class="modal" id="modal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
       <!-- Step 1: review the order -->
       <div id="review-step">
         <h3 id="modal-title">Review your order</h3>
@@ -778,7 +778,7 @@
   <!-- Shown after Stripe sends the customer back (each Payment Link's
        "after payment" redirect is https://teslacoaching.com/?paid=1) -->
   <div class="modal" id="paid-modal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="paid-title">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="paid-title" tabindex="-1">
       <!-- spinner while the payment is being confirmed, then a green tick in the same spot -->
       <div class="spinner" id="paid-spinner" aria-hidden="true" hidden></div>
       <svg class="checkmark" id="paid-check" viewBox="0 0 52 52" aria-hidden="true" hidden>
@@ -801,7 +801,7 @@
   <!-- Reschedule: opened from the link in a live-session confirmation email
        (teslacoaching.com/?reschedule=TC-XXXXXX&key=...) -->
   <div class="modal" id="reschedule-modal" hidden>
-    <div class="modal-card reschedule-card" role="dialog" aria-modal="true" aria-labelledby="rs-title">
+    <div class="modal-card reschedule-card" role="dialog" aria-modal="true" aria-labelledby="rs-title" tabindex="-1">
       <h3 id="rs-title" class="title-with-check"><span id="rs-title-text">Reschedule your session</span>
         <svg class="checkmark checkmark-small" id="rs-check" viewBox="0 0 52 52" aria-hidden="true" hidden>
           <circle cx="26" cy="26" r="23"/><path d="M15 27.5l7.5 7.5L37.5 19"/>
@@ -833,6 +833,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=2b7f4e84"></script>
+  <script src="script.js?v=b21a6159"></script>
 </body>
 </html>

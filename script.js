@@ -596,7 +596,15 @@ function openModal() {
   }
 
   $("#modal").hidden = false;
-  $("#modal-close").focus();
+  focusPopup("#modal");
+}
+
+// Move keyboard focus into a popup without outlining anything: the popup card
+// itself takes focus (it has tabindex="-1"), so Tab goes to its first button
+// and screen readers announce its heading.
+function focusPopup(modalSel) {
+  const card = $(`${modalSel} .modal-card`);
+  if (card) card.focus({ preventScroll: true });
 }
 
 /* ---------- Stripe's payment form inside the popup (embedded checkout) ---------- */
@@ -752,7 +760,7 @@ async function handlePaymentReturn() {
   if (b && sessionId && b.sessionId && b.sessionId !== sessionId) b = null; // a different booking
   if (!b && !sessionId) {
     showPaidMessage("unknown", ""); // paid on another device, or storage blocked
-    $("#paid-close").focus();
+    focusPopup("#paid-modal");
     return;
   }
   if (b && !b.paid) {
@@ -762,7 +770,7 @@ async function handlePaymentReturn() {
     savePending(b);
   }
   showPaidMessage("checking", b ? b.id : "");
-  $("#paid-close").focus();
+  focusPopup("#paid-modal");
   const result = await confirmPaidBooking(2, sessionId);
   showPaidMessage(result ? result.status : "error",
     (result && result.id) || (b && b.id) || "",
@@ -863,7 +871,7 @@ async function handleRescheduleLink() {
   Object.assign(rs, { id, key, slot: null, dateKey: null });
   rsShow("loading");
   $("#reschedule-modal").hidden = false;
-  $("#rs-x").focus();
+  focusPopup("#reschedule-modal");
 
   const [data] = await Promise.all([askSheet({ action: "lookup", id, key }), loadBooked()]);
   if (!data.ok) {
