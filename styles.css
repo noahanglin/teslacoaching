@@ -231,16 +231,17 @@ p { margin: 0 0 1em; }
 
 /* ===== Feedback ===== */
 .section-sub { color: var(--muted); margin: -32px 0 44px; }
-/* Carousel: 3 columns x 2 rows = 6 cards per page, scrolls sideways */
+/* Carousel: one row of 3 cards per page on desktop, scrolls sideways */
 .carousel { position: relative; display: flex; align-items: center; gap: 14px; }
 .reviews {
   --gap: 20px;
   --cols: 3;
+  --rows: 1;  /* script.js reads --cols and --rows to work out the pages */
   --peek: 64px; /* how much of the next page shows at the right edge */
   flex: 1; min-width: 0;
   display: grid;
   grid-auto-flow: column;
-  grid-template-rows: repeat(2, auto);
+  grid-template-rows: repeat(var(--rows), auto);
   /* columns are sized against the content box; the side padding leaves room
      for one gap plus a sliver ("peek") of the previous / next page */
   --edge: calc(var(--gap) + var(--peek));
@@ -262,7 +263,7 @@ p { margin: 0 0 1em; }
 .reviews.at-end { --fade-r: 0px; }
 .reviews::-webkit-scrollbar { display: none; }
 .reviews:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: var(--radius); }
-.review:nth-child(6n + 1) { scroll-snap-align: start; }
+.review { scroll-snap-align: start; }
 .carousel-btn {
   flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%;
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
@@ -489,6 +490,12 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .about-facts span { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* ===== FAQ ===== */
+.faq-group {
+  font-family: var(--font-head); font-size: 0.85rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold);
+  margin: 30px 0 12px;
+}
+.faq-group:first-child { margin-top: 0; }
 .faq details { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 12px; }
 .faq summary {
   cursor: pointer; padding: 18px 22px; font-weight: 600; list-style: none;
@@ -507,6 +514,22 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .footer { padding: 36px 0; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.9rem; }
 .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .footer p { margin: 0; }
+
+/* ===== Pinned pay bar (phones and small tablets only) ===== */
+.paybar { display: none; }
+@media (max-width: 960px) {
+  .paybar:not([hidden]) {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(13, 10, 20, 0.97); border-top: 1px solid var(--border);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
+  }
+  .paybar-total { display: grid; line-height: 1.1; }
+  .paybar-total span { color: var(--muted); font-size: 0.8rem; }
+  .paybar-total strong { font-family: var(--font-head); font-size: 1.6rem; color: var(--gold); }
+  .paybar .btn { flex: 0 1 auto; padding-left: 22px; padding-right: 22px; }
+}
 
 /* ===== Modal ===== */
 .modal {
@@ -635,6 +658,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
   .review { scroll-snap-align: start; }
   .socials, .about-contact { justify-content: center; }
   .about { grid-template-columns: 1fr; text-align: center; gap: 28px; }
+  /* long paragraphs read better left-aligned; the heading stays centred */
+  .about p:not(.eyebrow) { text-align: left; }
   .about-avatar { margin: 0 auto; width: 180px; height: 180px; }
   .about-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); text-align: left; }
 }
@@ -654,7 +679,12 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
   .hero-inner { gap: 20px; }
   .hero-art { max-width: 210px; }
   .section { padding: 70px 0; }
-  .cards, .steps, .topics { grid-template-columns: 1fr; }
+  .cards, .steps { grid-template-columns: 1fr; }
+  /* topics stay two per row on phones, just more compact */
+  .topics { gap: 12px; }
+  .topic { padding: 16px 14px; }
+  .topic h3 { font-size: 1.05rem; margin-bottom: 6px; }
+  .topic p { font-size: 0.88rem; line-height: 1.45; }
   .reviews { --cols: 1; --gap: 12px; --peek: 24px; }
   .carousel { gap: 0; }
   .carousel-btn { display: none; }

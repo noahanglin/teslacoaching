@@ -229,11 +229,16 @@ function renderDates() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  let started = false;
   for (let i = 0; i <= CONFIG.daysAhead; i++) {
     const day = new Date(today);
     day.setDate(today.getDate() + i);
     const key = localDateKey(day);
     const daySlots = slotsByDay.get(key) || [];
+    // start the row on the first day that has any bookable times (skips today
+    // and anything else inside the 24-hour notice period)
+    if (!started && daySlots.length === 0) continue;
+    started = true;
     const hasSlots = daySlots.some((s) => !isTaken(s));
     const fullyBooked = daySlots.length > 0 && !hasSlots;
 
@@ -310,6 +315,7 @@ function updateSummary() {
   $("#sum-length").textContent = durationLabel(state.duration);
   $("#sum-when").textContent = state.slot ? fmtFull.format(state.slot) : "Not selected";
   $("#sum-total").textContent = money(total());
+  $("#paybar-total").textContent = money(total());
 }
 
 function setService(service) {
@@ -974,6 +980,37 @@ function closeModal() {
   $("#submit-btn").focus();
 }
 
+/* ---------- Pinned pay bar on phones ---------- */
+
+// While someone is filling in the booking form on a phone, keep the total and
+// a Confirm and Pay button pinned to the bottom of the screen. It hides once
+// the form's own button is on screen, on wider screens, and while a popup is open.
+function updatePaybar() {
+  const bar = $("#paybar");
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  if (!bar || !vh || window.innerWidth > 960 || $$(".modal").some((m) => !m.hidden)) {
+    if (bar) bar.hidden = true;
+    return;
+  }
+  const book = $("#book").getBoundingClientRect();
+  const btn = $("#submit-btn").getBoundingClientRect();
+  const inBooking = book.top < vh * 0.6 && book.bottom > vh * 0.5;
+  const buttonOnScreen = btn.top < vh && btn.bottom > 0;
+  bar.hidden = !(inBooking && !buttonOnScreen);
+}
+
+function initPaybar() {
+  window.addEventListener("scroll", updatePaybar, { passive: true });
+  window.addEventListener("resize", updatePaybar);
+  $$(".modal").forEach((m) => new MutationObserver(updatePaybar).observe(m, { attributes: true, attributeFilter: ["hidden"] }));
+  $("#paybar-btn").addEventListener("click", () => {
+    const form = $("#booking-form");
+    if (form.requestSubmit) form.requestSubmit();
+    else $("#submit-btn").click();
+  });
+  updatePaybar();
+}
+
 /* ---------- Pause the orbs when nobody can see them ---------- */
 
 // The orbs use heavy animated SVG filters (smoke, goo, glows). Under a popup,
@@ -1353,14 +1390,17 @@ function initCarousel() {
   const next = $(".carousel-next");
   const dotsWrap = $("#reviews-dots");
 
-  // Cards fill top-to-bottom, then left-to-right, in 2 rows.
-  const cols = () => parseInt(getComputedStyle(track).getPropertyValue("--cols"), 10) || 1;
+  // Cards fill top-to-bottom, then left-to-right, in --rows rows (1 by default).
+  const cssNum = (name) => parseInt(getComputedStyle(track).getPropertyValue(name), 10) || 1;
+  const cols = () => cssNum("--cols");
+  const rows = () => cssNum("--rows");
   const columnStep = () => {
     const cards = track.children;
-    return cards.length > 2 ? cards[2].offsetLeft - cards[0].offsetLeft : track.clientWidth;
+    const r = rows();
+    return cards.length > r ? cards[r].offsetLeft - cards[0].offsetLeft : track.clientWidth;
   };
   const pageWidth = () => columnStep() * cols();
-  const pageCount = () => Math.max(1, Math.ceil(Math.ceil(track.children.length / 2) / cols()));
+  const pageCount = () => Math.max(1, Math.ceil(Math.ceil(track.children.length / rows()) / cols()));
   const currentPage = () => Math.min(pageCount() - 1, Math.round(track.scrollLeft / pageWidth()));
 
   function buildDots() {
@@ -1541,6 +1581,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $$(".borb svg").forEach((svg) => svg.pauseAnimations && svg.pauseAnimations());
   }
   initOrbPausing();
+  initPaybar();
 
   // "Copy" buttons (e.g. Discord username in the About section)
   $$("[data-copy]").forEach((btn) => btn.addEventListener("click", async () => {
