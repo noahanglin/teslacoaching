@@ -52,7 +52,7 @@ const CONFIG = {
   // Visitor stats (Cloudflare Web Analytics: free, no cookies, no banner needed).
   // Paste the token from the snippet Cloudflare gives you, the part inside
   // data-cf-beacon='{"token": "..."}'. Leave "" to turn stats off.
-  cloudflareAnalyticsToken: "",
+  cloudflareAnalyticsToken: "6f861ee8cbb247babb190977b9645871",
 
   // BACKUP: Stripe Payment Links, used only if the embedded form can't load
   // (key not set, Stripe or the bookings sheet unreachable). Each link must
@@ -1530,7 +1530,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Visitor stats (only when a Cloudflare token is set)
   if (/^[A-Za-z0-9]{16,64}$/.test(CONFIG.cloudflareAnalyticsToken)) {
     const beacon = document.createElement("script");
-    beacon.defer = true;
+    beacon.type = "module"; // as in Cloudflare's snippet
     beacon.src = "https://static.cloudflareinsights.com/beacon.min.js";
     beacon.setAttribute("data-cf-beacon", JSON.stringify({ token: CONFIG.cloudflareAnalyticsToken }));
     document.body.appendChild(beacon);
