@@ -49,6 +49,11 @@ const CONFIG = {
   // (pay with card 4242 4242 4242 4242, any future date, any CVC).
   stripeTestPublishableKey: "pk_test_51QrUXOFfi36TOg6mngtSUhAuQMKHvF9ZRgouHJpAzsd0KyiQhwkQbEuxBdSGG8JHGF6OXIsMbJpGyPhuUl7ECFti001L371LXf",
 
+  // Visitor stats (Cloudflare Web Analytics: free, no cookies, no banner needed).
+  // Paste the token from the snippet Cloudflare gives you, the part inside
+  // data-cf-beacon='{"token": "..."}'. Leave "" to turn stats off.
+  cloudflareAnalyticsToken: "",
+
   // BACKUP: Stripe Payment Links, used only if the embedded form can't load
   // (key not set, Stripe or the bookings sheet unreachable). Each link must
   // charge exactly the price shown.
@@ -313,6 +318,9 @@ function setService(service) {
   if (radio) radio.checked = true;
   $("#live-fields").hidden = service !== "live";
   $("#vod-fields").hidden = service !== "vod";
+  $("#policy-note").textContent = service === "live"
+    ? "Full refund or free reschedule with 24 hours' notice."
+    : "Full refund any time before I start your review.";
   $("#live-notes-wrap").hidden = service !== "live";
   $("#details-legend").textContent = service === "live" ? "5. Your details" : "3. Your details";
   $("#privacy-legend").textContent = service === "live" ? "6. Privacy" : "4. Privacy";
@@ -597,6 +605,27 @@ function openModal() {
 
   $("#modal").hidden = false;
   focusPopup("#modal");
+}
+
+// While a popup is open, Tab and Shift+Tab cycle through its own buttons and
+// fields instead of wandering onto the page behind it.
+function trapTab(e) {
+  const modal = $$(".modal").find((m) => !m.hidden);
+  if (!modal) return;
+  const card = $(".modal-card", modal);
+  const items = $$("a[href], button, input, select, textarea, iframe, [tabindex]:not([tabindex='-1'])", card)
+    .filter((el) => !el.disabled && el.getClientRects().length > 0);
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  const inside = card.contains(document.activeElement);
+  if (e.shiftKey && (!inside || document.activeElement === first || document.activeElement === card)) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && (!inside || document.activeElement === last)) {
+    e.preventDefault();
+    first.focus();
+  }
 }
 
 // Move keyboard focus into a popup without outlining anything: the popup card
@@ -1481,6 +1510,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showPayStep(false);
   });
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") return trapTab(e);
     if (e.key !== "Escape") return;
     if (!$("#modal").hidden) closeModal();
     if (!$("#paid-modal").hidden) closePaidMessage();
@@ -1496,6 +1526,15 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#paid-x").addEventListener("click", closePaidMessage);
   $("#paid-modal").addEventListener("click", (e) => { if (e.target.id === "paid-modal") closePaidMessage(); });
   handlePaymentReturn();
+
+  // Visitor stats (only when a Cloudflare token is set)
+  if (/^[A-Za-z0-9]{16,64}$/.test(CONFIG.cloudflareAnalyticsToken)) {
+    const beacon = document.createElement("script");
+    beacon.defer = true;
+    beacon.src = "https://static.cloudflareinsights.com/beacon.min.js";
+    beacon.setAttribute("data-cf-beacon", JSON.stringify({ token: CONFIG.cloudflareAnalyticsToken }));
+    document.body.appendChild(beacon);
+  }
 
   // Freeze the SVG orb animations for visitors who prefer reduced motion
   if (prefersReducedMotion) {

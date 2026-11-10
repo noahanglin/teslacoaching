@@ -100,8 +100,9 @@ p { margin: 0 0 1em; }
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(13, 10, 20, 0.82);
-  backdrop-filter: blur(12px);
+  /* nearly solid instead of a blur: a blur here would re-blur the animated orbs
+     underneath on every frame, which is heavy on slower computers */
+  background: rgba(13, 10, 20, 0.95);
   border-bottom: 1px solid var(--border);
 }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
