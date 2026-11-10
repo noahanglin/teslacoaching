@@ -49,6 +49,14 @@ const CONFIG = {
   // (pay with card 4242 4242 4242 4242, any future date, any CVC).
   stripeTestPublishableKey: "pk_test_51QrUXOFfi36TOg6mngtSUhAuQMKHvF9ZRgouHJpAzsd0KyiQhwkQbEuxBdSGG8JHGF6OXIsMbJpGyPhuUl7ECFti001L371LXf",
 
+  // Twitch subscriber discount. clientId comes from your app at
+  // dev.twitch.tv/console (public; must match TWITCH_CLIENT_ID in the sheet
+  // script). While it's "", the Twitch button and mentions stay hidden.
+  twitch: {
+    clientId: "tpl4rzeypeoda3lvlbrvjwksbkrhts",
+    discount: 5, // dollars; keep the same as TWITCH_SUB_DISCOUNT in the sheet script
+  },
+
   // Visitor stats (Cloudflare Web Analytics: free, no cookies, no banner needed).
   // Paste the token from the snippet Cloudflare gives you, the part inside
   // data-cf-beacon='{"token": "..."}'. Leave "" to turn stats off.
@@ -193,6 +201,7 @@ const state = {
   slot: null, // Date
   private: false,
   test: false, // true only while a $1 test purchase is being set up
+  twitch: null, // { token, login } once Twitch confirms an active sub
 };
 
 const fmtDow = new Intl.DateTimeFormat(undefined, { weekday: "short" });
@@ -298,7 +307,7 @@ function renderTimes() {
 
 function total() {
   const base = state.service === "live" ? CONFIG.prices.liveHourly * state.duration : CONFIG.prices.vod;
-  return base + (state.private ? CONFIG.prices.privateAddon : 0);
+  return base + (state.private ? CONFIG.prices.privateAddon : 0) - (state.twitch ? CONFIG.twitch.discount : 0);
 }
 
 function durationLabel(h) {
@@ -314,6 +323,8 @@ function updateSummary() {
   $("#sum-private-row").hidden = !state.private;
   $("#sum-length").textContent = durationLabel(state.duration);
   $("#sum-when").textContent = state.slot ? fmtFull.format(state.slot) : "Not selected";
+  $("#sum-twitch-row").hidden = !state.twitch;
+  $("#sum-twitch").textContent = `−${money(CONFIG.twitch.discount)}`;
   $("#sum-total").textContent = money(total());
   $("#paybar-total").textContent = money(total());
 }
@@ -441,6 +452,7 @@ function buildBooking() {
     rank: $("#rank").value,
     timeZone: userTimeZone,
     reference: stripeReference(),
+    twitch: state.twitch ? state.twitch.login : "", // shown only; the sheet re-checks with Twitch
     createdAt: new Date().toISOString(),
     paid: false,
   };
@@ -468,6 +480,7 @@ function orderRows(b) {
   rows.push(["Private session", b.private ? `Yes (+${money(CONFIG.prices.privateAddon)})` : "No"]);
   if (b.name) rows.push(["Name", b.name]);
   rows.push(["Discord", b.discord], ["Email", b.email]);
+  if (b.twitch) rows.push(["Twitch sub discount", `−${money(CONFIG.twitch.discount)} (${b.twitch})`]);
   rows.push(["Total", money(b.total)]);
   return rows;
 }
@@ -693,9 +706,27 @@ async function startEmbeddedPayment(booking, backupUrl) {
 
   const [stripeLoaded, data] = await Promise.all([
     waitForStripe(),
-    askSheet({ action: "checkout", booking: bookingPayload(booking) }),
+    askSheet({
+      action: "checkout",
+      booking: bookingPayload(booking),
+      // the sheet re-checks this with Twitch before taking $5 off
+      twitchToken: booking.twitch && state.twitch ? state.twitch.token : undefined,
+    }),
   ]);
   if (attempt !== payAttempt) return; // closed or went back meanwhile
+
+  if (data.status === "not_subscribed") {
+    // Twitch no longer confirms the sub (e.g. it just ran out): drop the discount
+    clearTwitch(`Your Twitch subscription couldn't be confirmed (your Twitch login may have expired), so the $${CONFIG.twitch.discount} discount was removed. Log in with Twitch again to re-apply it.`);
+    closeModal();
+    $("#twitch-box").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  if (data.status === "twitch_error") {
+    showPayStep(false);
+    $("#pay-error").textContent = "Couldn't confirm your Twitch subscription with Twitch just now. Please try again in a moment.";
+    return;
+  }
 
   if (data.status === "taken" || data.status === "too_soon") {
     closeModal();
@@ -709,8 +740,10 @@ async function startEmbeddedPayment(booking, backupUrl) {
     return;
   }
   const failed = (message) => {
-    if (backupUrl) {
-      location.href = backupUrl; // fall back to the Stripe payment link
+    // fall back to the Stripe payment link, except for discounted bookings
+    // (the links have fixed, full prices)
+    if (backupUrl && !booking.twitch) {
+      location.href = backupUrl;
       return;
     }
     showPayStep(false);
@@ -978,6 +1011,98 @@ function closeModal() {
   showPayStep(false);
   $("#modal").hidden = true;
   $("#submit-btn").focus();
+}
+
+/* ---------- Twitch subscriber discount ---------- */
+
+// "Log in with Twitch" opens Twitch's login in a small window. Twitch sends
+// the visitor to twitch-callback.html, which hands the login token back here.
+// We then ask the bookings sheet to check with Twitch whether they're
+// subscribed; the sheet checks again when it creates the checkout, so the
+// discount can't be faked from the browser.
+const twitchEnabled = () => !!CONFIG.twitch.clientId;
+
+function setTwitchStatus(text, kind) {
+  const el = $("#twitch-status");
+  el.textContent = text || "";
+  el.className = `twitch-status ${kind || ""}`;
+}
+
+function renderTwitch() {
+  const btn = $("#twitch-login");
+  btn.classList.toggle("active", !!state.twitch);
+  $("#twitch-login-text").textContent = state.twitch
+    ? `Twitch sub: ${state.twitch.login} (−${money(CONFIG.twitch.discount)})`
+    : `Twitch subscriber? Log in for ${money(CONFIG.twitch.discount).replace(".00", "")} off`;
+  btn.title = state.twitch ? "Click to remove the Twitch discount" : "";
+  updateSummary();
+}
+
+function clearTwitch(message) {
+  state.twitch = null;
+  renderTwitch();
+  setTwitchStatus(message || "", message ? "error" : "");
+}
+
+function startTwitchLogin() {
+  if (state.twitch) { clearTwitch(); return; } // clicking again removes it
+  const stateKey = Array.from(crypto.getRandomValues(new Uint8Array(16)), (x) => x.toString(16).padStart(2, "0")).join("");
+  try { localStorage.setItem("twitchState", stateKey); } catch { /* storage unavailable */ }
+  const url = "https://id.twitch.tv/oauth2/authorize?" + new URLSearchParams({
+    response_type: "token",
+    client_id: CONFIG.twitch.clientId,
+    redirect_uri: `${location.origin}/twitch-callback.html`,
+    scope: "user:read:subscriptions",
+    state: stateKey,
+  });
+  const w = window.open(url, "twitch-login", "width=520,height=720");
+  if (!w) {
+    setTwitchStatus("Your browser blocked the Twitch login window. Please allow pop-ups for this site and try again.", "error");
+    return;
+  }
+  setTwitchStatus("Log in with Twitch in the new window…");
+}
+
+async function handleTwitchResult(result) {
+  if (!result || result.type !== "twitch-login") return;
+  if (result.error || !result.token) {
+    setTwitchStatus(result.error === "access_denied" ? "Twitch login was cancelled." : "Twitch login didn't work. Please try again.", "error");
+    return;
+  }
+  setTwitchStatus("Checking your subscription…");
+  const r = await askSheet({ action: "twitch", token: result.token });
+  if (r.ok && r.subscribed) {
+    state.twitch = { token: result.token, login: r.login };
+    renderTwitch();
+    setTwitchStatus(`Thanks for subscribing, ${r.login}! $${CONFIG.twitch.discount} off has been applied.`, "ok");
+  } else if (r.ok) {
+    clearTwitch(`${r.login} isn't subscribed to Tesla on Twitch, so the discount doesn't apply.`);
+  } else {
+    clearTwitch("Couldn't check your Twitch subscription right now. Please try again in a moment.");
+  }
+}
+
+function initTwitch() {
+  if (!twitchEnabled()) return;
+  $("#twitch-box").hidden = false;
+  $$("[data-twitch-only]").forEach((el) => (el.hidden = false));
+  $("#twitch-login").addEventListener("click", startTwitchLogin);
+  // from the login window
+  window.addEventListener("message", (e) => {
+    if (e.origin === location.origin) handleTwitchResult(e.data);
+  });
+  // or, if the login opened in this same tab, via storage
+  const fromStorage = () => {
+    let result = null;
+    try {
+      result = JSON.parse(localStorage.getItem("twitchResult") || "null");
+      localStorage.removeItem("twitchResult");
+    } catch { /* storage unavailable */ }
+    if (result) handleTwitchResult(result);
+  };
+  window.addEventListener("storage", (e) => { if (e.key === "twitchResult" && e.newValue) fromStorage(); });
+  fromStorage();
+  renderTwitch();
 }
 
 /* ---------- Pinned pay bar on phones ---------- */
@@ -1622,6 +1747,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   initOrbPausing();
   initPaybar();
+  initTwitch();
 
   // "Copy" buttons (e.g. Discord username in the About section)
   $$("[data-copy]").forEach((btn) => btn.addEventListener("click", async () => {

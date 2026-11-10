@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Twitch login</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0d0a14; color: #ece8f4;
+           font: 16px/1.5 system-ui, sans-serif; text-align: center; padding: 20px; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <p id="msg">Checking your Twitch login…</p>
+  <script>
+    // Twitch sends the visitor back here after they log in (Twitch "implicit"
+    // login: the token arrives in the address after the #). This page hands
+    // the token to the booking page that opened it, then closes itself.
+    // The token is only used to ask Twitch whether they're subscribed.
+    (function () {
+      var p = new URLSearchParams(location.hash.slice(1));
+      var q = new URLSearchParams(location.search);
+      var expected = null;
+      try { expected = localStorage.getItem("twitchState"); } catch (e) {}
+      var result;
+      if (q.get("error")) {
+        result = { type: "twitch-login", error: q.get("error") };
+      } else if (!p.get("access_token") || !expected || p.get("state") !== expected) {
+        result = { type: "twitch-login", error: "state_mismatch" };
+      } else {
+        result = { type: "twitch-login", token: p.get("access_token") };
+      }
+      history.replaceState(null, "", location.pathname); // don't leave the token in the address bar
+      try { localStorage.removeItem("twitchState"); } catch (e) {}
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(result, location.origin);
+        window.close();
+      } else {
+        // no opener (e.g. opened in the same tab): pass it via storage, then go back
+        try { localStorage.setItem("twitchResult", JSON.stringify(result)); } catch (e) {}
+        location.replace("/#book");
+      }
+      document.getElementById("msg").textContent = "You can close this window and return to the booking page.";
+    })();
+  </script>
+</body>
+</html>

@@ -517,6 +517,26 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .footer p { margin: 0; }
 
+/* ===== Twitch subscriber discount ===== */
+.twitch-box[hidden], [data-twitch-only][hidden] { display: none; }
+.twitch-box { margin: -4px 0 16px; }
+.twitch-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 11px 14px; border-radius: var(--radius-sm); cursor: pointer;
+  background: rgba(145, 70, 255, 0.12); border: 1px solid rgba(145, 70, 255, 0.55);
+  color: var(--text); font: 600 0.92rem var(--font-body);
+  transition: background 0.15s, border-color 0.15s;
+}
+.twitch-btn:hover { background: rgba(145, 70, 255, 0.22); }
+.twitch-btn svg { width: 18px; height: 18px; fill: #a970ff; flex: 0 0 auto; }
+.twitch-btn.active { border-color: var(--success); background: rgba(52, 211, 153, 0.1); }
+.twitch-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.twitch-status { margin: 8px 0 0; font-size: 0.84rem; color: var(--muted); text-align: center; }
+.twitch-status:empty { display: none; }
+.twitch-status.ok { color: var(--success); }
+.twitch-status.error { color: var(--danger); }
+.sub-note { margin: -6px 0 14px; font-size: 0.85rem; color: #a970ff; font-weight: 600; }
+
 /* ===== Pinned pay bar (phones and small tablets only) ===== */
 .paybar { display: none; }
 @media (max-width: 960px) {
