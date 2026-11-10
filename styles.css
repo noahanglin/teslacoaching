@@ -517,6 +517,22 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .footer p { margin: 0; }
 
+/* ===== Test tools (?test=1 only) ===== */
+.test-tools[hidden], .sim-pay[hidden] { display: none; }
+.test-tools {
+  margin: 14px 0 0; padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1px dashed rgba(242, 193, 78, 0.55); background: rgba(242, 193, 78, 0.05);
+  display: grid; gap: 8px; font-size: 0.85rem;
+}
+.test-tools-title { margin: 0; font-family: var(--font-head); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+.test-field { display: grid; gap: 4px; color: var(--muted); }
+.test-field input { padding: 8px 10px; font-size: 0.9rem; }
+.test-check { display: flex; align-items: center; gap: 8px; color: var(--text); cursor: pointer; }
+.test-check input { width: 16px; height: 16px; accent-color: var(--purple); }
+.test-tools .btn-small { justify-self: start; }
+.sim-pay { padding: 28px 8px 8px; text-align: center; }
+.sim-pay-note { color: var(--muted); margin: 0 0 16px; }
+
 /* ===== Twitch subscriber discount ===== */
 .twitch-box[hidden], [data-twitch-only][hidden] { display: none; }
 .twitch-box { margin: -4px 0 16px; }

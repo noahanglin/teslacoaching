@@ -452,7 +452,8 @@ function buildBooking() {
     rank: $("#rank").value,
     timeZone: userTimeZone,
     reference: stripeReference(),
-    twitch: state.twitch ? state.twitch.login : "", // shown only; the sheet re-checks with Twitch
+    // shown only; the sheet re-checks with Twitch (a simulated sub only counts on test bookings)
+    twitch: state.twitch && (!state.twitch.simulated || state.test) ? state.twitch.login : "",
     createdAt: new Date().toISOString(),
     paid: false,
   };
@@ -469,7 +470,7 @@ function fmtWhen(iso, timeZone) {
 // (the emails are written by the bookings sheet script)
 function orderRows(b) {
   const rows = [];
-  if (b.test) rows.push(["Test booking", "Stripe test mode, no real charge"]);
+  if (b.test) rows.push(["Test booking", "No real charge"]);
   rows.push(["Service", b.service]);
   if (b.length) rows.push(["Length", b.length]);
   if (b.start) rows.push(["When", fmtWhen(b.start, b.timeZone)]);
@@ -589,7 +590,7 @@ function openModal() {
   const booking = buildBooking();
   currentBooking = booking;
   const pay = paymentUrl(); // backup payment link
-  const embedded = embeddedReady(booking.test);
+  const embedded = inPagePayment(booking);
 
   const list = $("#order-list");
   list.innerHTML = "";
@@ -696,6 +697,8 @@ function showPayStep(on) {
   $("#pay-step").hidden = !on;
   $("#modal .modal-card").classList.toggle("paying", on);
   $("#checkout-loading").hidden = !on;
+  $(".checkout-frame").hidden = false; // (test mode swaps this for the Pay button)
+  $("#sim-pay").hidden = true;
 }
 
 async function startEmbeddedPayment(booking, backupUrl) {
@@ -704,13 +707,29 @@ async function startEmbeddedPayment(booking, backupUrl) {
   $("#pay-error").textContent = "";
   showPayStep(true);
 
+  // Test mode with "Skip Stripe": a single Pay button instead of Stripe's form
+  if (skipStripe(booking)) {
+    $("#checkout-loading").hidden = true;
+    $(".checkout-frame").hidden = true;
+    $("#sim-pay").hidden = false;
+    $("#sim-pay-error").textContent = "";
+    const btn = $("#sim-pay-btn");
+    btn.disabled = false;
+    btn.textContent = `Pay ${money(booking.total)}`;
+    btn.focus();
+    return;
+  }
+
   const [stripeLoaded, data] = await Promise.all([
     waitForStripe(),
     askSheet({
       action: "checkout",
       booking: bookingPayload(booking),
       // the sheet re-checks this with Twitch before taking $5 off
-      twitchToken: booking.twitch && state.twitch ? state.twitch.token : undefined,
+      twitchToken: booking.twitch && state.twitch && !state.twitch.simulated ? state.twitch.token : undefined,
+      // test bookings with "Simulate Twitch sub" (needs the test passcode)
+      twitchTest: booking.test && booking.twitch && state.twitch && state.twitch.simulated ? true : undefined,
+      passcode: booking.test ? testPasscode() : undefined,
     }),
   ]);
   if (attempt !== payAttempt) return; // closed or went back meanwhile
@@ -725,6 +744,11 @@ async function startEmbeddedPayment(booking, backupUrl) {
   if (data.status === "twitch_error") {
     showPayStep(false);
     $("#pay-error").textContent = "Couldn't confirm your Twitch subscription with Twitch just now. Please try again in a moment.";
+    return;
+  }
+  if (data.status === "test_locked") {
+    showPayStep(false);
+    $("#pay-error").textContent = "Wrong or missing test passcode (needed to simulate the Twitch discount). Enter it in the test panel, or untick Simulate Twitch sub discount.";
     return;
   }
 
@@ -1045,7 +1069,11 @@ function clearTwitch(message) {
 }
 
 function startTwitchLogin() {
-  if (state.twitch) { clearTwitch(); return; } // clicking again removes it
+  if (state.twitch) { // clicking again removes it
+    clearTwitch();
+    if ($("#test-twitch")) $("#test-twitch").checked = false;
+    return;
+  }
   const stateKey = Array.from(crypto.getRandomValues(new Uint8Array(16)), (x) => x.toString(16).padStart(2, "0")).join("");
   try { localStorage.setItem("twitchState", stateKey); } catch { /* storage unavailable */ }
   const url = "https://id.twitch.tv/oauth2/authorize?" + new URLSearchParams({
@@ -1103,6 +1131,131 @@ function initTwitch() {
   window.addEventListener("storage", (e) => { if (e.key === "twitchResult" && e.newValue) fromStorage(); });
   fromStorage();
   renderTwitch();
+}
+
+/* ---------- Test tools (?test=1 only) ---------- */
+
+// Opening the site with ?test=1 shows a "Test mode" panel and a "Test booking"
+// button, autofills the form, and (by default) swaps Stripe's payment form for
+// a single Pay button. With "Send emails & add to schedule" off, that button
+// only shows the confirmation screen: nothing is sent, saved or blocked. With
+// it on, the bookings sheet records a TEST booking exactly like a real
+// payment (needs the TEST_PASSCODE set in the sheet script).
+const isTestPage = new URLSearchParams(location.search).get("test") === "1";
+const testPasscode = () => ($("#test-passcode") ? $("#test-passcode").value.trim() : "");
+const skipStripe = (b) => isTestPage && !!b && b.test && $("#test-skip-stripe").checked;
+const inPagePayment = (b) => skipStripe(b) || embeddedReady(b.test);
+
+function setSimulatedTwitch(on) {
+  if (on) {
+    state.twitch = { token: null, login: "test_subscriber", simulated: true };
+    renderTwitch();
+    setTwitchStatus("Test mode: simulated Twitch sub (test bookings only).", "ok");
+  } else if (state.twitch && state.twitch.simulated) {
+    clearTwitch();
+  }
+}
+
+function pickFirstOpenSlot() {
+  const key = [...slotsByDay.keys()].find((k) => slotsByDay.get(k).some((s) => !isTaken(s)));
+  if (!key) return;
+  state.dateKey = key;
+  state.slot = slotsByDay.get(key).find((s) => !isTaken(s));
+  renderDates();
+  renderTimes();
+  updateSummary();
+}
+
+function fillTestDetails() {
+  const set = (sel, v) => {
+    const el = $(sel);
+    if (el) { el.value = v; el.classList.remove("invalid"); }
+  };
+  set("#name", "Test Customer");
+  set("#email", CONFIG.contactEmail); // test emails come to you
+  set("#discord", "test_customer");
+  $("#rank").value = "Gold";
+  set("#live-notes", "Test booking from the test tools.");
+  set("#replay-code", "TEST01");
+  set("#ign", "TestPlayer");
+  set("#vod-notes", "Test booking from the test tools.");
+  pickFirstOpenSlot();
+  clearError();
+}
+
+async function simulatePayment() {
+  const b = currentBooking;
+  if (!b) return;
+  const btn = $("#sim-pay-btn");
+  btn.disabled = true;
+  btn.textContent = "Processing…";
+  $("#sim-pay-error").textContent = "";
+
+  // Nothing sent or saved: just walk through the confirmation screens
+  if (!$("#test-real").checked) {
+    await sleep(400);
+    closeModal();
+    clearPending();
+    showPaidMessage("checking", b.id);
+    focusPopup("#paid-modal");
+    await sleep(700);
+    showPaidMessage("confirmed", b.id, b.email);
+    $("#paid-email-note").textContent = "Test only: no emails were sent and nothing was saved or scheduled.";
+    return;
+  }
+
+  // Full test: the bookings sheet records it, blocks the time and emails both of you
+  const r = await askSheet({
+    action: "test_pay",
+    booking: bookingPayload(b),
+    passcode: testPasscode(),
+    twitchTest: b.twitch && state.twitch && state.twitch.simulated ? true : undefined,
+  });
+  if (r.ok && r.status === "confirmed") {
+    closeModal();
+    clearPending();
+    showPaidMessage("confirmed", r.id || b.id, r.email || b.email);
+    focusPopup("#paid-modal");
+    loadBooked();
+    return;
+  }
+  btn.disabled = false;
+  btn.textContent = `Pay ${money(b.total)}`;
+  $("#sim-pay-error").textContent = {
+    test_locked: "Wrong or missing test passcode. Set TEST_PASSCODE in the sheet script's Script Properties and enter it in the test panel.",
+    taken: "That time is already booked. Go back and pick another one.",
+    too_soon: `That time is less than ${CONFIG.minNoticeHours} hours away. Go back and pick another one.`,
+  }[r.status] || "Couldn't reach the bookings sheet. Please try again.";
+}
+
+function initTestTools(bookedLoaded) {
+  if (!isTestPage) return;
+  $("#test-tools").hidden = false;
+  // passcode is remembered on this browser only
+  try { $("#test-passcode").value = localStorage.getItem("testPasscode") || ""; } catch { /* storage unavailable */ }
+  $("#test-passcode").addEventListener("input", () => {
+    try { localStorage.setItem("testPasscode", testPasscode()); } catch { /* storage unavailable */ }
+  });
+  // using Stripe's real test checkout always records and emails, so tick and lock that box
+  const syncReal = () => {
+    const real = $("#test-real");
+    if (!$("#test-skip-stripe").checked) {
+      real.dataset.was = real.dataset.was || String(real.checked);
+      real.checked = true;
+      real.disabled = true;
+    } else if (real.disabled) {
+      real.disabled = false;
+      real.checked = real.dataset.was === "true";
+      delete real.dataset.was;
+    }
+  };
+  $("#test-skip-stripe").addEventListener("change", syncReal);
+  $("#test-twitch").addEventListener("change", (e) => setSimulatedTwitch(e.target.checked));
+  $("#test-fill").addEventListener("click", fillTestDetails);
+  fillTestDetails();
+  if ($("#test-twitch").checked) setSimulatedTwitch(true);
+  // once booked times arrive, make sure the picked time is still free
+  if (bookedLoaded) bookedLoaded.then(() => { if (!state.slot) pickFirstOpenSlot(); });
 }
 
 /* ---------- Pinned pay bar on phones ---------- */
@@ -1686,15 +1839,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Test booking: the whole flow in Stripe's TEST mode (no real charge).
   // Only shown when the page is opened with ?test=1 and a test key is set.
   const testBtn = $("#test-btn");
-  const testMode = new URLSearchParams(location.search).get("test") === "1" && embeddedReady(true);
-  if (testMode) {
+  if (isTestPage) {
     testBtn.hidden = false;
     testBtn.textContent = "Test booking (no real charge)";
   }
   testBtn.addEventListener("click", () => startCheckout(true));
+  $("#sim-pay-btn").addEventListener("click", simulatePayment);
 
   // Start loading Stripe early so the payment form opens quickly
-  if (embeddedReady(false) || testMode) loadStripeJs();
+  if (embeddedReady(false) || (isTestPage && embeddedReady(true))) loadStripeJs();
 
   // modal
   $("#modal-close").addEventListener("click", closeModal);
@@ -1704,7 +1857,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("#modal-pay").addEventListener("click", (e) => {
     const b = currentBooking;
-    if (!b || !embeddedReady(b.test)) return; // no embedded form: follow the payment link
+    if (!b || !inPagePayment(b)) return; // no embedded form: follow the payment link
     e.preventDefault();
     const backup = $("#modal-pay").getAttribute("href");
     startEmbeddedPayment(b, backup && backup !== "#" ? backup : "");
@@ -1779,5 +1932,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initCarousel();
   rebuildSlots();
   updateSummary();
-  loadBooked(); // grey out booked times once the sheet answers
+  const bookedLoaded = loadBooked(); // grey out booked times once the sheet answers
+  initTestTools(bookedLoaded);
 });
