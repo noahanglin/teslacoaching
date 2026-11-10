@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=f64270ea">
+  <link rel="stylesheet" href="styles.css?v=8de2b9c6">
 </head>
 <body>
 
@@ -597,8 +597,10 @@
                 <legend>2. Your replay</legend>
                 <label class="input-label" for="replay-code">Replay code</label>
                 <input type="text" id="replay-code" name="replayCode" placeholder="e.g. A1B2C3" maxlength="12" autocomplete="off">
-                <label class="input-label" for="vod-notes">Anything specific you want reviewed? (optional)</label>
-                <textarea id="vod-notes" name="vodNotes" rows="3" placeholder="e.g. I keep running out of heals when I need them."></textarea>
+                <label class="input-label" for="ign">In-game name</label>
+                <input type="text" id="ign" name="ign" placeholder="So I know which player is you" maxlength="40" autocomplete="off">
+                <label class="input-label" for="vod-notes">Anything specific you want reviewed, or anything else I should know? (optional)</label>
+                <textarea id="vod-notes" name="vodNotes" rows="3" maxlength="1000" placeholder="e.g. I keep running out of heals when I need them."></textarea>
               </fieldset>
             </div>
 
@@ -606,8 +608,8 @@
               <legend id="details-legend">5. Your details</legend>
               <div class="input-row">
                 <div>
-                  <label class="input-label" for="name">Name</label>
-                  <input type="text" id="name" name="name" autocomplete="name" required>
+                  <label class="input-label" for="name">Name/Preferred Name (optional)</label>
+                  <input type="text" id="name" name="name" autocomplete="name">
                 </div>
                 <div>
                   <label class="input-label" for="email">Email</label>
@@ -616,8 +618,8 @@
               </div>
               <div class="input-row">
                 <div>
-                  <label class="input-label" for="discord">Discord username</label>
-                  <input type="text" id="discord" name="discord" required>
+                  <label class="input-label" for="discord">Discord username (full tag)</label>
+                  <input type="text" id="discord" name="discord" placeholder="e.g. tesla0945" autocomplete="off" aria-describedby="discord-hint" required>
                 </div>
                 <div>
                   <label class="input-label" for="rank">Current rank</label>
@@ -633,6 +635,12 @@
                     <option>Prefer not to say</option>
                   </select>
                 </div>
+              </div>
+              <p class="input-hint discord-hint" id="discord-hint">Discord: use your full username, not your display name (click your profile picture in Discord to see it). If yours ends in a # number like name#1234, include that too.</p>
+              <!-- Live coaching only (the VOD form has its own notes box) -->
+              <div id="live-notes-wrap">
+                <label class="input-label" for="live-notes">Anything you want to work on, or anything else I should know? (optional)</label>
+                <textarea id="live-notes" name="liveNotes" rows="3" maxlength="1000" placeholder="e.g. I want to get better at positioning in team fights."></textarea>
               </div>
             </fieldset>
 
@@ -755,6 +763,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=9b6734ed"></script>
+  <script src="script.js?v=c3cec4db"></script>
 </body>
 </html>

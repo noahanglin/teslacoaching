@@ -326,6 +326,7 @@ function setService(service) {
   if (radio) radio.checked = true;
   $("#live-fields").hidden = service !== "live";
   $("#vod-fields").hidden = service !== "vod";
+  $("#live-notes-wrap").hidden = service !== "live";
   $("#details-legend").textContent = service === "live" ? "5. Your details" : "3. Your details";
   $("#privacy-legend").textContent = service === "live" ? "6. Privacy" : "4. Privacy";
   clearError();
@@ -356,11 +357,19 @@ function validate() {
   if (state.service === "vod") {
     const code = $("#replay-code");
     if (!code.value.trim()) return showError("Please enter your replay code.", code), false;
+    const ign = $("#ign");
+    if (!ign.value.trim()) return showError("Please enter your in-game name from that match.", ign), false;
   }
-  const name = $("#name"), email = $("#email"), discord = $("#discord");
-  if (!name.value.trim()) return showError("Please enter your name.", name), false;
+  const email = $("#email"), discord = $("#discord"); // name is optional
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) return showError("Please enter a valid email.", email), false;
   if (!discord.value.trim()) return showError("Please enter your Discord username.", discord), false;
+  // Discord usernames are 2–32 letters, numbers, _ or . (e.g. tesla0945), or an
+  // older-style name#1234. Anything else is usually a display name by mistake.
+  discord.value = discord.value.trim().replace(/^@/, "");
+  const d = discord.value;
+  if (!/^[a-z0-9_.]{2,32}$/i.test(d) && !/^.{2,32}#\d{4}$/.test(d)) {
+    return showError("That doesn't look like a full Discord username. Use your username (like tesla0945), not your display name, and include the #1234 if yours has one.", discord), false;
+  }
   return true;
 }
 
@@ -419,7 +428,8 @@ function buildBooking() {
     start: live ? state.slot.toISOString() : "",
     minutes: live ? Math.round(state.duration * 60) : 0,
     replayCode: live ? "" : $("#replay-code").value.trim(),
-    notes: live ? "" : $("#vod-notes").value.trim(),
+    ign: live ? "" : $("#ign").value.trim(),
+    notes: (live ? $("#live-notes") : $("#vod-notes")).value.trim(),
     private: state.private,
     total: total(),
     name: $("#name").value.trim(),
@@ -451,10 +461,12 @@ function orderRows(b) {
   if (b.length) rows.push(["Length", b.length]);
   if (b.start) rows.push(["When", fmtWhen(b.start, b.timeZone)]);
   if (b.replayCode) rows.push(["Replay code", b.replayCode]);
+  if (b.ign) rows.push(["In-game name", b.ign]);
   if (b.notes) rows.push(["Notes", b.notes]);
   if (!b.start) rows.push(["Delivery", "Within 48 hours"]);
   rows.push(["Private session", b.private ? `Yes (+${money(CONFIG.prices.privateAddon)})` : "No"]);
-  rows.push(["Name", b.name], ["Email", b.email], ["Discord", b.discord]);
+  if (b.name) rows.push(["Name", b.name]);
+  rows.push(["Discord", b.discord], ["Email", b.email]);
   rows.push(["Total", money(b.total)]);
   return rows;
 }
@@ -472,9 +484,10 @@ function coachText(b) {
     lines.push(`When (their time): ${fmtWhen(b.start, b.timeZone)}`);
   }
   if (b.replayCode) lines.push(`Replay code: ${b.replayCode}`);
+  if (b.ign) lines.push(`In-game name: ${b.ign}`);
   if (b.notes) lines.push(`Notes: ${b.notes}`);
   lines.push(`Private (do not post): ${b.private ? "Yes" : "No"}`, "");
-  lines.push(`Name: ${b.name}`, `Email: ${b.email}`, `Discord: ${b.discord}`);
+  lines.push(`Discord: ${b.discord}`, `Name: ${b.name || "(not given)"}`, `Email: ${b.email}`);
   lines.push(`Rank: ${b.rank}`, `Time zone: ${b.timeZone}`);
   if (b.start) {
     lines.push("", CONFIG.bookingsUrl
@@ -483,6 +496,9 @@ function coachText(b) {
   }
   return lines.join("\n");
 }
+
+// What to call the customer: their name if they gave one, otherwise their Discord
+const displayName = (b) => b.name || b.discord;
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -496,7 +512,7 @@ function customerEmailHtml(b) {
     ? `I'll message you on Discord before your session. My Discord is <strong>tesla0945</strong>. Need to reschedule? Reply to this email at least 24 hours before your session.`
     : `I'll send your review within 48 hours.`;
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#222;max-width:560px">
-<p>Hi ${escapeHtml(b.name)},</p>
+<p>Hi ${escapeHtml(displayName(b))},</p>
 <p>Thanks for booking! Your payment went through and you're all set.</p>
 <p style="font-size:13px;color:#666;margin-bottom:2px">Confirmation number</p>
 <p style="font-size:24px;font-weight:700;letter-spacing:2px;margin-top:0">${escapeHtml(b.id)}</p>
@@ -519,7 +535,7 @@ async function sendCoachEmail(b) {
         access_key: CONFIG.web3formsKey,
         subject: `${b.test ? "[TEST] " : ""}Paid booking ${b.id}: ${b.service}${b.length ? ` ${b.length}` : ""} ${money(b.total)}`,
         from_name: "Tesla’s Coaching", // curly ’ (a straight ' gets mangled by email services)
-        name: b.name,
+        name: displayName(b),
         email: b.email, // replying to the email goes to the customer
         message: coachText(b),
       }),
@@ -546,7 +562,7 @@ async function sendCustomerEmail(b) {
         user_id: CONFIG.emailjs.publicKey,
         template_params: {
           to_email: b.email,
-          to_name: b.name,
+          to_name: displayName(b),
           reply_to: CONFIG.contactEmail,
           confirmation: b.id,
           subject: `${b.test ? "[TEST] " : ""}Your booking is confirmed (${b.id})`,
