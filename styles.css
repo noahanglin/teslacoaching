@@ -596,7 +596,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
   .nav-links.open { display: flex; }
   .nav-links a:not(.btn) { padding: 12px 0; border-bottom: 1px solid var(--border); }
   .nav-links .btn { margin-top: 14px; }
-  .hero { padding: 50px 0 70px; }
+  .hero { padding: 24px 0 70px; }
+  /* smaller orbs on phones so the headline and Book button fit on the first screen */
+  .hero-inner { gap: 20px; }
+  .hero-art { max-width: 210px; }
   .section { padding: 70px 0; }
   .cards, .steps, .topics { grid-template-columns: 1fr; }
   .reviews { --cols: 1; --gap: 12px; --peek: 24px; }

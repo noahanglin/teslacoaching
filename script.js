@@ -450,7 +450,7 @@ function orderRows(b) {
   if (b.replayCode) rows.push(["Replay code", b.replayCode]);
   if (b.ign) rows.push(["In-game name", b.ign]);
   if (b.notes) rows.push(["Notes", b.notes]);
-  if (!b.start) rows.push(["Delivery", "Within 48 hours"]);
+  if (!b.start) rows.push(["Delivery", "Video on Discord, within 48 hours"]);
   rows.push(["Private session", b.private ? `Yes (+${money(CONFIG.prices.privateAddon)})` : "No"]);
   if (b.name) rows.push(["Name", b.name]);
   rows.push(["Discord", b.discord], ["Email", b.email]);
