@@ -30,7 +30,7 @@ const CONFIG = {
 
   slotStepMinutes: 30,  // how often a session can start (30 = on the hour and half hour)
   daysAhead: 14,        // how far out people can book
-  minNoticeHours: 12,   // no bookings sooner than this
+  minNoticeHours: 24,   // no bookings (or reschedules) sooner than this; keep BOOKING_NOTICE_HOURS in the sheet script the same
 
   // Your bookings Google Sheet web app (see BOOKINGS-SETUP.md). It:
   // - tells the site which times are booked, so they show greyed out, and
@@ -654,10 +654,14 @@ async function startEmbeddedPayment(booking, backupUrl) {
   ]);
   if (attempt !== payAttempt) return; // closed or went back meanwhile
 
-  if (data.status === "taken") {
+  if (data.status === "taken" || data.status === "too_soon") {
     closeModal();
     await loadBooked();
-    showError("Sorry, someone just booked that time. Please pick another one.");
+    rebuildSlots();
+    updateSummary();
+    showError(data.status === "taken"
+      ? "Sorry, someone just booked that time. Please pick another one."
+      : `Sessions need to be booked at least ${CONFIG.minNoticeHours} hours ahead. Please pick another time.`);
     $("#time-grid").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
@@ -702,7 +706,7 @@ async function startEmbeddedPayment(booking, backupUrl) {
 
 // What the "back from Stripe" popup says at each stage
 const PAID_MESSAGES = {
-  checking: ["Confirming your payment…", "This only takes a moment.", false],
+  checking: ["Confirming your payment…", "Please stay on this page while I confirm your payment with Stripe. This usually takes a few seconds.", false],
   confirmed: ["Payment received. Thank you!", "You'll receive an email at {email} shortly with your booking information.", true],
   processing: ["Payment processing", "Your payment is still clearing (bank payments can take a few days). I'll email you to confirm your booking once it goes through.", true],
   not_paid: ["We couldn't confirm your payment", `Stripe hasn't confirmed a payment for this booking. If you were charged, email ${CONFIG.contactEmail} with your confirmation number and I'll sort it out.`, false],
@@ -717,6 +721,11 @@ function showPaidMessage(status, id, email) {
   $("#paid-title").textContent = title;
   $("#paid-email-note").textContent = note.replace("{email}", email || "your email");
   $("#paid-help").hidden = !showHelp;
+  // while confirming: spinning circle, and no "Got it" button yet
+  const checking = status === "checking";
+  $("#paid-spinner").hidden = !checking;
+  $("#paid-actions").hidden = checking;
+  $("#paid-modal .modal-card").classList.toggle("checking", checking);
   $("#paid-number-row").hidden = !id;
   $("#paid-number").textContent = id || "";
   $("#paid-modal").hidden = false;
@@ -759,6 +768,161 @@ async function handlePaymentReturn() {
 function closePaidMessage() {
   $("#paid-modal").hidden = true;
 }
+/* ---------- Reschedule (link in the confirmation email) ---------- */
+
+const rs = { id: "", key: "", start: null, end: null, minutes: 60, dateKey: null, slot: null, slotsByDay: new Map() };
+
+// Taken, ignoring the customer's own current session (so they can shift it by 30 min)
+function rsTaken(s) {
+  const a = s.getTime();
+  const b = a + rs.minutes * 60000;
+  return bookedRanges.some((r) =>
+    !(r.start === rs.start.getTime() && r.end === rs.end.getTime()) && a < r.end && b > r.start);
+}
+const rsOpen = (s) => !rsTaken(s) && s.getTime() !== rs.start.getTime();
+
+function rsShow(part, message) {
+  $("#rs-loading").hidden = part !== "loading";
+  $("#rs-body").hidden = part !== "body";
+  $("#rs-message").hidden = part !== "message";
+  if (message) $("#rs-message-text").textContent = message;
+}
+
+function rsBuildSlots() {
+  rs.slotsByDay = new Map();
+  for (const s of generateSlots(rs.minutes / 60)) {
+    const key = localDateKey(s);
+    if (!rs.slotsByDay.has(key)) rs.slotsByDay.set(key, []);
+    rs.slotsByDay.get(key).push(s);
+  }
+  if (rs.slot && !rsOpen(rs.slot)) rs.slot = null;
+  const hasOpen = (k) => (rs.slotsByDay.get(k) || []).some(rsOpen);
+  if (!rs.dateKey || !hasOpen(rs.dateKey)) rs.dateKey = [...rs.slotsByDay.keys()].find(hasOpen) || null;
+  rsRender();
+}
+
+function rsRender() {
+  // dates
+  const strip = $("#rs-dates");
+  strip.innerHTML = "";
+  for (const [key, slots] of rs.slotsByDay) {
+    const day = slots[0];
+    const open = slots.some(rsOpen);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "date-btn";
+    btn.setAttribute("role", "option");
+    btn.setAttribute("aria-selected", String(key === rs.dateKey));
+    btn.disabled = !open;
+    btn.innerHTML = `<span class="dow">${fmtDow.format(day)}</span><span class="day">${day.getDate()}</span><span class="mon">${fmtMon.format(day)}</span>`;
+    btn.addEventListener("click", () => { rs.dateKey = key; rs.slot = null; rsRender(); });
+    strip.appendChild(btn);
+  }
+  // times
+  const grid = $("#rs-times");
+  grid.innerHTML = "";
+  const slots = rs.slotsByDay.get(rs.dateKey) || [];
+  if (!slots.length) grid.innerHTML = `<p class="muted">No open times right now. Please email ${CONFIG.contactEmail}.</p>`;
+  for (const s of slots) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "time-btn";
+    btn.textContent = fmtTime.format(s);
+    if (!rsOpen(s)) {
+      btn.disabled = true;
+      btn.classList.add("taken");
+      btn.title = s.getTime() === rs.start.getTime() ? "Your current time" : "Already booked";
+    } else {
+      btn.setAttribute("aria-pressed", String(!!rs.slot && rs.slot.getTime() === s.getTime()));
+      btn.addEventListener("click", () => { rs.slot = s; $("#rs-error").textContent = ""; rsRender(); });
+    }
+    grid.appendChild(btn);
+  }
+  const go = $("#rs-confirm");
+  go.disabled = !rs.slot;
+  go.textContent = rs.slot ? `Move my session to ${fmtFull.format(rs.slot)}` : "Pick a new time";
+}
+
+async function handleRescheduleLink() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get("reschedule");
+  const key = params.get("key");
+  if (!id || !key) return;
+  // tidy the address bar (the link stays in their email)
+  params.delete("reschedule");
+  params.delete("key");
+  const qs = params.toString();
+  history.replaceState(null, "", location.pathname + (qs ? `?${qs}` : "") + location.hash);
+
+  Object.assign(rs, { id, key, slot: null, dateKey: null });
+  rsShow("loading");
+  $("#reschedule-modal").hidden = false;
+  $("#rs-x").focus();
+
+  const [data] = await Promise.all([askSheet({ action: "lookup", id, key }), loadBooked()]);
+  if (!data.ok) {
+    const why = {
+      invalid: `This reschedule link isn't valid. Please email ${CONFIG.contactEmail} with your confirmation number.`,
+      cancelled: `This session has been cancelled. Please email ${CONFIG.contactEmail} if that's a mistake.`,
+      not_live: "Only live sessions can be rescheduled.",
+    }[data.status] || `Couldn't load your booking right now. Please try the link again in a moment, or email ${CONFIG.contactEmail}.`;
+    rsShow("message", why);
+    return;
+  }
+  rs.start = new Date(data.start);
+  rs.end = new Date(data.end);
+  rs.minutes = data.minutes;
+  if (!data.canReschedule) {
+    rsShow("message", `Your session (${fmtFull.format(rs.start)}) is less than ${data.cutoffHours} hours away, so it can't be moved online. Please email ${CONFIG.contactEmail} and I'll see what I can do.`);
+    return;
+  }
+  $("#rs-current").innerHTML = "";
+  $("#rs-current").append(
+    `Confirmation ${data.id}: ${durationLabel(rs.minutes / 60)} live session, currently `,
+    Object.assign(document.createElement("strong"), { textContent: fmtFull.format(rs.start) }),
+    ". Pick a new time below.");
+  $("#rs-tz").textContent = `(your time: ${userTimeZone})`;
+  rsBuildSlots();
+  rsShow("body");
+}
+
+async function confirmReschedule() {
+  if (!rs.slot) return;
+  const go = $("#rs-confirm");
+  go.disabled = true;
+  go.textContent = "Moving your session…";
+  const data = await askSheet({ action: "reschedule", id: rs.id, key: rs.key, start: rs.slot.toISOString(), timeZone: userTimeZone });
+  if (data.ok) {
+    const when = fmtFull.format(new Date(data.start));
+    rsShow("message", `Done! Your session is now ${when}. ${data.emailed === false ? "" : "I've emailed you the new time."}`);
+    loadBooked(); // update the booking form's greyed-out times too
+    return;
+  }
+  if (data.status === "taken") {
+    await loadBooked();
+    rsBuildSlots();
+    $("#rs-error").textContent = "Sorry, someone just booked that time. Please pick another one.";
+    return;
+  }
+  if (data.status === "too_late") {
+    rsShow("message", `Your session is now less than 24 hours away, so it can't be moved online. Please email ${CONFIG.contactEmail}.`);
+    return;
+  }
+  if (data.status === "too_soon") {
+    rsBuildSlots();
+    $("#rs-error").textContent = `The new time needs to be at least ${CONFIG.minNoticeHours} hours away. Please pick another one.`;
+    return;
+  }
+  rsRender();
+  $("#rs-error").textContent = data.status === "invalid"
+    ? "That time can't be booked. Please pick another one."
+    : `Couldn't move your session right now. Please try again, or email ${CONFIG.contactEmail}.`;
+}
+
+function closeReschedule() {
+  $("#reschedule-modal").hidden = true;
+}
+
 function closeModal() {
   payAttempt++; // cancel a checkout that's still loading
   destroyEmbedded();
@@ -1178,6 +1342,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Check the form, make sure the time wasn't just taken, then show the order.
   async function startCheckout(test) {
     if (!validate()) return;
+    // the page may have been open a while: is the chosen time still far enough ahead?
+    if (state.service === "live" && state.slot &&
+        state.slot.getTime() < Date.now() + CONFIG.minNoticeHours * 3600000) {
+      rebuildSlots();
+      updateSummary();
+      showError(`Sessions need to be booked at least ${CONFIG.minNoticeHours} hours ahead. Please pick another time.`);
+      $("#time-grid").scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const buttons = [$("#submit-btn"), $("#test-btn")];
     buttons.forEach((b) => (b.disabled = true));
     const free = await slotStillFree();
@@ -1237,7 +1410,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key !== "Escape") return;
     if (!$("#modal").hidden) closeModal();
     if (!$("#paid-modal").hidden) closePaidMessage();
+    if (!$("#reschedule-modal").hidden) closeReschedule();
   });
+  // reschedule popup
+  $("#rs-confirm").addEventListener("click", confirmReschedule);
+  $("#rs-x").addEventListener("click", closeReschedule);
+  $("#rs-done").addEventListener("click", closeReschedule);
+  $("#reschedule-modal").addEventListener("click", (e) => { if (e.target.id === "reschedule-modal") closeReschedule(); });
+  handleRescheduleLink();
   $("#paid-close").addEventListener("click", closePaidMessage);
   $("#paid-x").addEventListener("click", closePaidMessage);
   $("#paid-modal").addEventListener("click", (e) => { if (e.target.id === "paid-modal") closePaidMessage(); });

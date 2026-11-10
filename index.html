@@ -23,7 +23,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=32c60da3">
+  <link rel="stylesheet" href="styles.css?v=a96b7e88">
 </head>
 <body>
 
@@ -404,7 +404,7 @@
     <section class="section section-alt">
       <div class="container">
         <p class="eyebrow center">What we work on</p>
-        <h2 class="center">How to take control on Moira</h2>
+        <h2 class="center">Let me help you take control of your games</h2>
         <div class="topics">
           <div class="topic">
             <h3>Positioning</h3>
@@ -724,7 +724,7 @@
           </details>
           <details>
             <summary>What if I need to cancel or reschedule?</summary>
-            <p>Let me know at least 24 hours before your live session and you can choose a full refund or a free move to another open slot. Within 24 hours of the session I can still reschedule you, but can't refund.</p>
+            <p>To reschedule, use the <strong>Reschedule my session</strong> link in your confirmation email to pick a new time yourself, up to 24 hours before your live session. To cancel for a full refund, reply to that email at least 24 hours before. Within 24 hours of the session, email me and I can still reschedule you, but can't refund.</p>
           </details>
           <details>
             <summary>What if I'm late or miss a session?</summary>
@@ -779,20 +779,53 @@
        "after payment" redirect is https://teslacoaching.com/?paid=1) -->
   <div class="modal" id="paid-modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="paid-title">
+      <!-- shown only while the payment is being confirmed -->
+      <div class="spinner" id="paid-spinner" aria-hidden="true" hidden></div>
       <h3 id="paid-title">Payment received. Thank you!</h3>
       <div class="confirm-number" id="paid-number-row">
         <span>Confirmation number</span>
         <strong id="paid-number"></strong>
       </div>
-      <p id="paid-email-note">You'll receive an email shortly with your booking information.</p>
+      <p id="paid-email-note" role="status">You'll receive an email shortly with your booking information.</p>
       <p class="fine-print modal-note" id="paid-help">Nothing after an hour? Check your spam folder, or email <a href="mailto:moiracoaching@gmail.com">moiracoaching@gmail.com</a> with your confirmation number.</p>
-      <div class="modal-actions">
+      <div class="modal-actions" id="paid-actions">
         <button class="btn" id="paid-close" type="button">Got it</button>
       </div>
       <button class="modal-close" id="paid-x" type="button" aria-label="Close">&times;</button>
     </div>
   </div>
 
-  <script src="script.js?v=9e12c7c0"></script>
+  <!-- Reschedule: opened from the link in a live-session confirmation email
+       (teslacoaching.com/?reschedule=TC-XXXXXX&key=...) -->
+  <div class="modal" id="reschedule-modal" hidden>
+    <div class="modal-card reschedule-card" role="dialog" aria-modal="true" aria-labelledby="rs-title">
+      <h3 id="rs-title">Reschedule your session</h3>
+      <div id="rs-loading" class="rs-loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="muted" role="status">Loading your booking…</p>
+      </div>
+      <div id="rs-body" hidden>
+        <p class="muted" id="rs-current"></p>
+        <p class="input-label">Pick a new date</p>
+        <div class="date-strip" id="rs-dates" role="listbox" aria-label="Available dates"></div>
+        <p class="input-label rs-times-label">Pick a new time <span class="tz" id="rs-tz"></span></p>
+        <div class="time-grid" id="rs-times"></div>
+        <p class="form-error" id="rs-error" role="alert"></p>
+        <div class="modal-actions">
+          <button class="btn btn-block" id="rs-confirm" type="button" disabled>Pick a new time</button>
+        </div>
+        <p class="fine-print modal-note">You can reschedule online up to 24 hours before your session. To cancel, reply to your confirmation email.</p>
+      </div>
+      <div id="rs-message" hidden>
+        <p id="rs-message-text" role="status"></p>
+        <div class="modal-actions">
+          <button class="btn" id="rs-done" type="button">Done</button>
+        </div>
+      </div>
+      <button class="modal-close" id="rs-x" type="button" aria-label="Close">&times;</button>
+    </div>
+  </div>
+
+  <script src="script.js?v=e5e99d01"></script>
 </body>
 </html>
