@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=c9c5ca66">
+  <link rel="stylesheet" href="styles.css?v=1d206863">
 </head>
 <body>
 
@@ -662,7 +662,7 @@
               <span>Total</span>
               <strong id="sum-total">$55.00</strong>
             </div>
-            <button type="submit" class="btn btn-block" id="submit-btn">Continue to payment</button>
+            <button type="submit" class="btn btn-block" id="submit-btn">Confirm and Pay</button>
             <!-- Only shown at teslacoaching.com/?test=1 (see testPurchase in script.js) -->
             <button type="button" class="btn btn-ghost btn-block test-btn" id="test-btn" hidden>Test purchase</button>
             <p class="form-error" id="form-error" role="alert"></p>
@@ -723,39 +723,31 @@
     </div>
   </footer>
 
-  <!-- Confirmation modal -->
+  <!-- Order review: shown after "Confirm and Pay", before going to Stripe -->
   <div class="modal" id="modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <h3 id="modal-title">Almost done!</h3>
-      <p class="muted" id="modal-intro"></p>
-      <p class="modal-status" id="modal-status" role="status" hidden></p>
-      <pre class="modal-summary" id="modal-summary"></pre>
-      <ol class="modal-steps">
-        <li id="email-step">
-          <span class="modal-step-label">Send me your booking details</span>
-          <div class="modal-actions">
-            <a class="btn" id="modal-send" href="#">Email booking details</a>
-            <button class="btn btn-ghost" id="modal-copy" type="button">Copy details</button>
-          </div>
-        </li>
-        <li id="pay-step" hidden>
-          <span class="modal-step-label">Pay securely</span>
-          <div class="modal-actions">
-            <a class="btn" id="modal-pay" href="#">Pay with Stripe</a>
-          </div>
-        </li>
-      </ol>
-      <p class="fine-print modal-note" id="modal-note"></p>
+      <h3 id="modal-title">Review your order</h3>
+      <p class="muted" id="modal-intro">Check everything looks right, then continue to Stripe to pay.</p>
+      <dl class="order-list" id="order-list"></dl>
+      <div class="modal-actions">
+        <a class="btn btn-block" id="modal-pay" href="#">Continue to payment with Stripe</a>
+      </div>
+      <p class="fine-print modal-note" id="modal-note">After paying you'll come back here and get your confirmation number. Your booking details are emailed to you once payment goes through.</p>
       <button class="modal-close" id="modal-close" type="button" aria-label="Close">&times;</button>
     </div>
   </div>
 
-  <!-- Shown after Stripe sends the customer back (set the Payment Link's
-       "after payment" redirect to your site address with ?paid=1 on the end) -->
+  <!-- Shown after Stripe sends the customer back (each Payment Link's
+       "after payment" redirect is https://teslacoaching.com/?paid=1) -->
   <div class="modal" id="paid-modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="paid-title">
       <h3 id="paid-title">Payment received. Thank you!</h3>
-      <p class="muted">You're booked<span id="paid-id"></span>. I'll confirm your session on Discord or by email within 24 hours. If you haven't sent your booking details yet, email them to <a href="mailto:moiracoaching@gmail.com">moiracoaching@gmail.com</a>.</p>
+      <div class="confirm-number" id="paid-number-row">
+        <span>Confirmation number</span>
+        <strong id="paid-number"></strong>
+      </div>
+      <p id="paid-email-note">You'll receive an email shortly with your booking information.</p>
+      <p class="fine-print modal-note">Nothing after an hour? Check your spam folder, or email <a href="mailto:moiracoaching@gmail.com">moiracoaching@gmail.com</a> with your confirmation number.</p>
       <div class="modal-actions">
         <button class="btn" id="paid-close" type="button">Got it</button>
       </div>
@@ -763,6 +755,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=d5d84ae1"></script>
+  <script src="script.js?v=f00357e5"></script>
 </body>
 </html>

@@ -36,10 +36,20 @@ const CONFIG = {
   // (Later this will come from your real booking system.)
   bookedSlots: [],
 
-  // Web3Forms access key (free, from web3forms.com). When set, booking details
-  // are emailed to you automatically as soon as someone clicks
-  // "Continue to payment". Leave "" to have customers email them instead.
+  // Both emails below are sent only after the customer pays: Stripe sends them
+  // back to the site (?paid=1) and the site emails the booking they just paid for.
+
+  // YOUR copy of each paid booking, via Web3Forms (free, web3forms.com).
   web3formsKey: "a406df78-c071-4844-b39b-403a29e585c2",
+
+  // The CUSTOMER's confirmation email, via EmailJS (free, emailjs.com, sends
+  // from your Gmail). Paste the three values from your EmailJS dashboard.
+  // While any of them is blank, customers just aren't emailed.
+  emailjs: {
+    publicKey: "iWkYvP4alOOdrC2JA",    // Account → General → Public Key
+    serviceId: "service_lwm3k7x",     // Email Services → your Gmail service → Service ID
+    templateId: "template_cd3o459",   // Email Templates → your template → Template ID
+  },
 
   // Stripe Payment Links (create these in your Stripe dashboard, then paste
   // each link here). Each link must charge exactly the price shown.
@@ -336,47 +346,118 @@ function paymentUrl() {
   }
 }
 
-function bookingText() {
+/* ---------- Booking record ---------- */
+
+// Everything about one order. It's saved in the customer's browser right
+// before they go to Stripe, and used to send both emails once they come
+// back after paying. Their booking ID doubles as the confirmation number.
+function buildBooking() {
+  const live = state.service === "live";
+  return {
+    id: state.bookingId,
+    test: state.test,
+    service: live ? "Live Coaching" : "VOD Review",
+    length: live ? durationLabel(state.duration) : "",
+    start: live ? state.slot.toISOString() : "",
+    replayCode: live ? "" : $("#replay-code").value.trim(),
+    notes: live ? "" : $("#vod-notes").value.trim(),
+    private: state.private,
+    total: total(),
+    name: $("#name").value.trim(),
+    email: $("#email").value.trim(),
+    discord: $("#discord").value.trim(),
+    rank: $("#rank").value,
+    timeZone: userTimeZone,
+    reference: stripeReference(),
+    createdAt: new Date().toISOString(),
+    paid: false,
+    coachSent: false,
+    customerSent: false,
+  };
+}
+
+function fmtWhen(iso, timeZone) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone, weekday: "long", month: "long", day: "numeric",
+    hour: "numeric", minute: "2-digit", timeZoneName: "short",
+  }).format(new Date(iso));
+}
+
+// The order as label/value rows: used in the review popup and the customer's email
+function orderRows(b) {
+  const rows = [];
+  if (b.test) rows.push(["Test purchase", "Not a real booking"]);
+  rows.push(["Service", b.service]);
+  if (b.length) rows.push(["Length", b.length]);
+  if (b.start) rows.push(["When", fmtWhen(b.start, b.timeZone)]);
+  if (b.replayCode) rows.push(["Replay code", b.replayCode]);
+  if (b.notes) rows.push(["Notes", b.notes]);
+  if (!b.start) rows.push(["Delivery", "Within 48 hours"]);
+  rows.push(["Private session", b.private ? `Yes (+${money(CONFIG.prices.privateAddon)})` : "No"]);
+  rows.push(["Name", b.name], ["Email", b.email], ["Discord", b.discord]);
+  rows.push(["Total", money(b.total)]);
+  return rows;
+}
+
+// Plain-text booking for YOUR email
+function coachText(b) {
   const lines = [];
-  if (state.test) lines.push(`*** TEST PURCHASE (${money(CONFIG.testPurchase.price)}), not a real booking ***`);
-  lines.push(`Booking ID: ${state.bookingId}`);
-  if (state.service === "live") {
-    lines.push("Service: Live Coaching");
-    lines.push(`Length: ${durationLabel(state.duration)}`);
-    lines.push(`When: ${fmtFull.format(state.slot)}`);
-    lines.push(`When (UTC): ${state.slot.toISOString()}`);
-  } else {
-    lines.push("Service: VOD Review");
-    lines.push(`Replay code: ${$("#replay-code").value.trim()}`);
-    const notes = $("#vod-notes").value.trim();
-    if (notes) lines.push(`Notes: ${notes}`);
+  if (b.test) lines.push("*** TEST PURCHASE, not a real booking ***", "");
+  lines.push(`Confirmation number: ${b.id}`);
+  lines.push(`Paid: ${money(b.total)} (Stripe reference ${b.reference})`, "");
+  lines.push(`Service: ${b.service}`);
+  if (b.length) lines.push(`Length: ${b.length}`);
+  if (b.start) {
+    lines.push(`When (your time): ${fmtWhen(b.start, CONFIG.coachTimeZone)}`);
+    lines.push(`When (their time): ${fmtWhen(b.start, b.timeZone)}`);
   }
-  lines.push(`Private (do not post): ${state.private ? `Yes (+${money(CONFIG.prices.privateAddon)})` : "No"}`);
-  lines.push(`Total: ${money(total())}`);
-  lines.push("");
-  lines.push(`Name: ${$("#name").value.trim()}`);
-  lines.push(`Email: ${$("#email").value.trim()}`);
-  lines.push(`Discord: ${$("#discord").value.trim()}`);
-  lines.push(`Rank: ${$("#rank").value}`);
-  lines.push(`Time zone: ${userTimeZone}`);
+  if (b.replayCode) lines.push(`Replay code: ${b.replayCode}`);
+  if (b.notes) lines.push(`Notes: ${b.notes}`);
+  lines.push(`Private (do not post): ${b.private ? "Yes" : "No"}`, "");
+  lines.push(`Name: ${b.name}`, `Email: ${b.email}`, `Discord: ${b.discord}`);
+  lines.push(`Rank: ${b.rank}`, `Time zone: ${b.timeZone}`);
+  if (b.start) lines.push("", `To block this time slot, add "${b.start}" to bookedSlots in script.js.`);
   return lines.join("\n");
 }
 
-// Email the booking details to you through Web3Forms (resolves true/false)
-async function sendBookingDetails(text) {
-  const customerEmail = $("#email").value.trim();
-  const service = state.service === "live" ? "Live Coaching" : "VOD Review";
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+// HTML body of the CUSTOMER's confirmation email
+function customerEmailHtml(b) {
+  const rows = orderRows(b).map(([k, v]) =>
+    `<tr><td style="padding:7px 18px 7px 0;color:#666;vertical-align:top">${escapeHtml(k)}</td>` +
+    `<td style="padding:7px 0;font-weight:600">${escapeHtml(v)}</td></tr>`).join("");
+  const next = b.start
+    ? `I'll message you on Discord before your session. My Discord is <strong>tesla0945</strong>. Need to reschedule? Reply to this email at least 24 hours before your session.`
+    : `I'll send your review within 48 hours.`;
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#222;max-width:560px">
+<p>Hi ${escapeHtml(b.name)},</p>
+<p>Thanks for booking! Your payment went through and you're all set.</p>
+<p style="font-size:13px;color:#666;margin-bottom:2px">Confirmation number</p>
+<p style="font-size:24px;font-weight:700;letter-spacing:2px;margin-top:0">${escapeHtml(b.id)}</p>
+<table style="border-collapse:collapse;margin:8px 0 18px">${rows}</table>
+<p>${next}</p>
+<p>Questions? Just reply to this email.</p>
+<p>Tesla<br><a href="https://teslacoaching.com">teslacoaching.com</a></p>
+</div>`;
+}
+
+/* ---------- Emails (sent only after payment) ---------- */
+
+async function sendCoachEmail(b) {
+  if (!CONFIG.web3formsKey) return true; // not set up: nothing to send
   try {
     const res = await fetch("https://api.web3forms.com/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         access_key: CONFIG.web3formsKey,
-        subject: `${state.test ? "[TEST] " : ""}New booking ${state.bookingId}: ${service} ${money(total())} (check Stripe for payment)`,
+        subject: `${b.test ? "[TEST] " : ""}Paid booking ${b.id}: ${b.service}${b.length ? ` ${b.length}` : ""} ${money(b.total)}`,
         from_name: "Coaching website",
-        name: $("#name").value.trim(),
-        email: customerEmail, // replying to the email goes to the customer
-        message: text,
+        name: b.name,
+        email: b.email, // replying to the email goes to the customer
+        message: coachText(b),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -386,89 +467,124 @@ async function sendBookingDetails(text) {
   }
 }
 
-let lastSent = { key: "", id: "" }; // avoid emailing the same booking twice
+const customerEmailReady = () =>
+  !!(CONFIG.emailjs.publicKey && CONFIG.emailjs.serviceId && CONFIG.emailjs.templateId);
 
-function setModalStatus(kind, message) {
-  const el = $("#modal-status");
-  el.hidden = !kind;
-  el.className = `modal-status ${kind || ""}`;
-  el.textContent = message || "";
+async function sendCustomerEmail(b) {
+  if (!customerEmailReady()) return true; // not set up: nothing to send
+  try {
+    const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        service_id: CONFIG.emailjs.serviceId,
+        template_id: CONFIG.emailjs.templateId,
+        user_id: CONFIG.emailjs.publicKey,
+        template_params: {
+          to_email: b.email,
+          to_name: b.name,
+          reply_to: CONFIG.contactEmail,
+          confirmation: b.id,
+          subject: `${b.test ? "[TEST] " : ""}Your booking is confirmed (${b.id})`,
+          order_html: customerEmailHtml(b),
+        },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
+// The booking waiting for payment, kept in this browser
+const PENDING_KEY = "pendingBooking";
+function loadPending() {
+  try { return JSON.parse(localStorage.getItem(PENDING_KEY) || "null"); } catch { return null; }
+}
+function savePending(b) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(b)); } catch { /* storage unavailable */ }
+}
+function clearPending() {
+  try { localStorage.removeItem(PENDING_KEY); } catch { /* storage unavailable */ }
+}
+
+// Send whichever emails are still owed for a paid booking. Runs on every
+// page load too, so a failed send is retried the next time they visit.
+let delivering = false;
+async function deliverPaidBooking() {
+  const b = loadPending();
+  if (!b || !b.paid || delivering) return;
+  delivering = true;
+  try {
+    if (!b.coachSent) { b.coachSent = await sendCoachEmail(b); savePending(b); }
+    if (!b.customerSent) { b.customerSent = await sendCustomerEmail(b); savePending(b); }
+    if (b.coachSent && b.customerSent) clearPending();
+  } finally {
+    delivering = false;
+  }
+}
+
+/* ---------- Order review popup ---------- */
+
 function openModal() {
-  // Same details as the last booking that was sent? Reuse its ID and don't resend.
-  const detailsKey = (() => { state.bookingId = ""; return bookingText(); })();
-  const alreadySent = CONFIG.web3formsKey && detailsKey === lastSent.key;
-  state.bookingId = alreadySent ? lastSent.id : newBookingId();
-
-  const text = bookingText();
-  $("#modal-summary").textContent = text;
-  const subject = `${state.service === "live" ? "Live Coaching booking" : "VOD Review"} ${state.bookingId}`;
-  $("#modal-send").href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-
+  state.bookingId = newBookingId();
+  const booking = buildBooking();
   const pay = paymentUrl();
-  const autoSend = !!CONFIG.web3formsKey;
-  $("#pay-step").hidden = !pay;
-  $("#email-step").hidden = autoSend; // shown again below if sending fails
-  $("#modal-send").classList.toggle("btn-ghost", !!pay); // email is the main button when there's no payment link
 
-  if (pay) {
-    $("#modal-title").textContent = "Almost done!";
-    $("#modal-intro").textContent = autoSend
-      ? "Last step: pay to lock in your session."
-      : "Two quick steps to lock in your session.";
-    $("#modal-pay").href = pay;
-    $("#modal-pay").textContent = `Pay ${money(total())} with Stripe`;
-    $("#modal-note").textContent = `Your booking ID ${state.bookingId} is attached to your payment so I can match them up.`;
-    try { localStorage.setItem("lastBookingId", state.bookingId); } catch { /* storage unavailable */ }
-  } else {
-    $("#modal-title").textContent = autoSend ? "Booking request" : "Booking request ready";
-    $("#modal-intro").textContent = autoSend
-      ? "I'll confirm your session and reply with a payment link."
-      : "Online payment for this option isn't set up yet. Send me your details and I'll confirm your session and reply with a payment link.";
-    $("#modal-note").textContent = "";
+  const list = $("#order-list");
+  list.innerHTML = "";
+  for (const [k, v] of orderRows(booking)) {
+    const row = document.createElement("div");
+    if (k === "Total") row.className = "order-total";
+    if (k === "Test purchase") row.className = "order-test";
+    const dt = document.createElement("dt");
+    const dd = document.createElement("dd");
+    dt.textContent = k;
+    dd.textContent = v;
+    row.append(dt, dd);
+    list.appendChild(row);
   }
 
-  setModalStatus(null);
-  if (autoSend) {
-    if (alreadySent) {
-      setModalStatus("sent", "Your booking details were sent to Tesla.");
-    } else {
-      setModalStatus("sending", "Sending your booking details…");
-      const bookingId = state.bookingId;
-      sendBookingDetails(text).then((ok) => {
-        if (state.bookingId !== bookingId) return; // a newer booking replaced this one
-        if (ok) {
-          lastSent = { key: detailsKey, id: bookingId };
-          setModalStatus("sent", "Your booking details were sent to Tesla.");
-        } else {
-          setModalStatus("failed", "Couldn't send your details automatically. Please email them with the button below.");
-          $("#email-step").hidden = false;
-          $("#modal-intro").textContent = pay
-            ? "Two quick steps to lock in your session."
-            : "Send me your details and I'll confirm your session and reply with a payment link.";
-        }
-      });
-    }
+  $("#modal-pay").parentElement.hidden = !pay;
+  if (pay) {
+    $("#modal-intro").textContent = "Check everything looks right, then continue to Stripe to pay.";
+    $("#modal-pay").href = pay;
+    $("#modal-pay").textContent = `Continue to payment with Stripe (${money(booking.total)})`;
+    $("#modal-note").hidden = false;
+    savePending(booking); // emails go out only after Stripe sends them back paid
+  } else {
+    $("#modal-intro").innerHTML = `Online payment isn't available for this option yet. Please email <a href="mailto:${CONFIG.contactEmail}">${CONFIG.contactEmail}</a> to book it.`;
+    $("#modal-note").hidden = true;
   }
 
   $("#modal").hidden = false;
   $("#modal-close").focus();
 }
 
-// Shown when Stripe sends the customer back after paying (?paid=1)
-function showPaidMessage() {
+/* ---------- Back from Stripe (?paid=1) ---------- */
+
+function handlePaymentReturn() {
   const params = new URLSearchParams(location.search);
-  if (params.get("paid") !== "1") return;
-  let id = "";
-  try { id = localStorage.getItem("lastBookingId") || ""; } catch { /* storage unavailable */ }
-  $("#paid-id").textContent = id ? ` (booking ID ${id})` : "";
-  $("#paid-modal").hidden = false;
-  $("#paid-close").focus();
-  // tidy the address bar so a refresh doesn't show this again
-  params.delete("paid");
-  const qs = params.toString();
-  history.replaceState(null, "", location.pathname + (qs ? `?${qs}` : "") + location.hash);
+  if (params.get("paid") === "1") {
+    const b = loadPending();
+    if (b && !b.paid) {
+      b.paid = true;
+      b.paidAt = new Date().toISOString();
+      savePending(b);
+    }
+    $("#paid-number-row").hidden = !b;
+    $("#paid-number").textContent = b ? b.id : "";
+    $("#paid-email-note").textContent = b && customerEmailReady()
+      ? `You'll receive an email at ${b.email} shortly with your booking information.`
+      : "I'll email you shortly with your booking information.";
+    $("#paid-modal").hidden = false;
+    $("#paid-close").focus();
+    // tidy the address bar so a refresh doesn't show this again
+    params.delete("paid");
+    const qs = params.toString();
+    history.replaceState(null, "", location.pathname + (qs ? `?${qs}` : "") + location.hash);
+  }
+  deliverPaidBooking();
 }
 function closePaidMessage() {
   $("#paid-modal").hidden = true;
@@ -919,17 +1035,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#paid-close").addEventListener("click", closePaidMessage);
   $("#paid-x").addEventListener("click", closePaidMessage);
   $("#paid-modal").addEventListener("click", (e) => { if (e.target.id === "paid-modal") closePaidMessage(); });
-  showPaidMessage();
-  $("#modal-copy").addEventListener("click", async () => {
-    const btn = $("#modal-copy");
-    try {
-      await navigator.clipboard.writeText($("#modal-summary").textContent);
-      btn.textContent = "Copied!";
-    } catch {
-      btn.textContent = "Copy failed";
-    }
-    setTimeout(() => (btn.textContent = "Copy details"), 1800);
-  });
+  handlePaymentReturn();
 
   // Freeze the SVG orb animations for visitors who prefer reduced motion
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
