@@ -326,7 +326,7 @@
           <p>
             I've been playing Moira since her release in 2017 and maintained mid to high top 500 every season since. I coach players
             from Bronze through Grandmaster in 5v5 and 6v6. I have played through every rank and gamemode many times and can meet you where you are.
-			I will offer realistic advice tailored to your needs. If you are feeling stuck, I want to help!
+			I will offer realistic advice tailored to your needs. If you are feeling stuck, I can help!
           </p>
           <ul class="about-facts">
             <li><strong>4506</strong><span>OW1 peak SR</span></li>
@@ -427,7 +427,7 @@
       <div class="container">
         <p class="eyebrow center">Feedback</p>
         <h2 class="center">What viewers are saying</h2>
-        <p class="section-sub center">Real comments from my <a href="https://www.youtube.com/@TeslaScience" target="_blank" rel="noopener">YouTube channel</a>.</p>
+        <p class="section-sub center">Comments from my <a href="https://www.youtube.com/@TeslaScience" target="_blank" rel="noopener">YouTube channel</a>.</p>
         <!--
           Each card links to the original comment. Video keys:
           B2GM    = Moira Only Bronze 5 to GM 1: Part 1     (eltYNfEpkvc)
@@ -598,7 +598,7 @@
                 <label class="input-label" for="replay-code">Replay code</label>
                 <input type="text" id="replay-code" name="replayCode" placeholder="e.g. A1B2C3" maxlength="12" autocomplete="off">
                 <label class="input-label" for="vod-notes">Anything specific you want reviewed? (optional)</label>
-                <textarea id="vod-notes" name="vodNotes" rows="3" placeholder="e.g. I keep dying in the first fight on push maps"></textarea>
+                <textarea id="vod-notes" name="vodNotes" rows="3" placeholder="e.g. I keep running out of heals when I need them."></textarea>
               </fieldset>
             </div>
 
@@ -643,7 +643,7 @@
                 <span class="check-box" aria-hidden="true"></span>
                 <span class="check-text">
                   <strong>Keep my session private <em class="addon-price">+$5</em></strong>
-                  <small>By default, I may post clips or highlights from sessions on my channels. Check this and your content won't be posted anywhere.</small>
+                  <small>I may post clips or highlights from sessions on my channels. Check this and your content won't be posted anywhere.</small>
                 </span>
               </label>
             </fieldset>
@@ -663,6 +663,8 @@
               <strong id="sum-total">$55.00</strong>
             </div>
             <button type="submit" class="btn btn-block" id="submit-btn">Continue to payment</button>
+            <!-- Only shown at teslacoaching.com/?test=1 (see testPurchase in script.js) -->
+            <button type="button" class="btn btn-ghost btn-block test-btn" id="test-btn" hidden>Test purchase</button>
             <p class="form-error" id="form-error" role="alert"></p>
             <p class="fine-print">Secure checkout with Stripe. Free reschedule with 24 hours' notice.</p>
           </aside>
@@ -685,8 +687,8 @@
             <ol>
               <li>From the main menu, open <strong>Career Profile</strong>.</li>
               <li>Go to the <strong>History</strong> tab, then <strong>Replays</strong>.</li>
-              <li>Find the match you want reviewed. The list shows the map, mode, hero and date, which makes it easy to spot.</li>
-              <li>Select it and choose <strong>Copy code</strong>, or write down the 6-character code shown next to it.</li>
+              <li>Find the match you want reviewed. Click <strong>Share</strong> to generate a code.</li>
+              <li>Choose <strong>Copy code</strong>, or write down the 6-character code shown next to it.</li>
             </ol>
           </details>
           <details>

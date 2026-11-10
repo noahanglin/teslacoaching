@@ -91,6 +91,8 @@ p { margin: 0 0 1em; }
 .btn-ghost:hover { border-color: var(--gold); box-shadow: none; }
 .btn-small { padding: 9px 18px; font-size: 0.9rem; }
 .btn-block { width: 100%; }
+.test-btn { margin-top: 10px; border-style: dashed; }
+.test-btn[hidden] { display: none; }
 .btn[disabled] { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 /* ===== Nav ===== */

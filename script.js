@@ -54,6 +54,14 @@ const CONFIG = {
     "live-120-private": "https://book.stripe.com/4gMbJ1fl5bon6zDaOdbjW06", // Live coaching, 2 hours + private   $115.00
     "vod-private":      "https://book.stripe.com/3cI9ATc8T3VV2jn1dDbjW07", // VOD review + private               $35.00
   },
+
+  // $1 test purchase for checking the whole booking flow yourself.
+  // The button only appears when the site is opened with ?test=1 on the end,
+  // e.g. https://teslacoaching.com/?test=1 . Customers never see it.
+  testPurchase: {
+    price: 1,
+    link: "https://book.stripe.com/9B66oHfl5gIH2jn6xXbjW08", // Test payment $1.00
+  },
 };
 
 /* ========================================================= */
@@ -136,6 +144,7 @@ const state = {
   dateKey: null,
   slot: null, // Date
   private: false,
+  test: false, // true only while a $1 test purchase is being set up
 };
 
 const fmtDow = new Intl.DateTimeFormat(undefined, { weekday: "short" });
@@ -222,6 +231,7 @@ function renderTimes() {
 }
 
 function total() {
+  if (state.test) return CONFIG.testPurchase.price;
   const base = state.service === "live" ? CONFIG.prices.liveHourly * state.duration : CONFIG.prices.vod;
   return base + (state.private ? CONFIG.prices.privateAddon : 0);
 }
@@ -290,6 +300,7 @@ function validate() {
 
 // Which Payment Link matches the current selection, e.g. "live-90-private"
 function paymentKey() {
+  if (state.test) return "test";
   const base = state.service === "live" ? `live-${Math.round(state.duration * 60)}` : "vod";
   return state.private ? `${base}-private` : base;
 }
@@ -313,7 +324,7 @@ function stripeReference() {
 }
 
 function paymentUrl() {
-  const link = CONFIG.paymentLinks[paymentKey()];
+  const link = state.test ? CONFIG.testPurchase.link : CONFIG.paymentLinks[paymentKey()];
   if (!link) return null;
   try {
     const url = new URL(link);
@@ -326,7 +337,9 @@ function paymentUrl() {
 }
 
 function bookingText() {
-  const lines = [`Booking ID: ${state.bookingId}`];
+  const lines = [];
+  if (state.test) lines.push(`*** TEST PURCHASE (${money(CONFIG.testPurchase.price)}), not a real booking ***`);
+  lines.push(`Booking ID: ${state.bookingId}`);
   if (state.service === "live") {
     lines.push("Service: Live Coaching");
     lines.push(`Length: ${durationLabel(state.duration)}`);
@@ -359,7 +372,7 @@ async function sendBookingDetails(text) {
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         access_key: CONFIG.web3formsKey,
-        subject: `New booking ${state.bookingId}: ${service} ${money(total())} (check Stripe for payment)`,
+        subject: `${state.test ? "[TEST] " : ""}New booking ${state.bookingId}: ${service} ${money(total())} (check Stripe for payment)`,
         from_name: "Coaching website",
         name: $("#name").value.trim(),
         email: customerEmail, // replying to the email goes to the customer
@@ -875,7 +888,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("#booking-form").addEventListener("submit", (e) => {
     e.preventDefault();
+    state.test = false;
     if (validate()) openModal();
+  });
+
+  // $1 test purchase: same form, same emails, but charges the test link.
+  // Only shown when the page is opened with ?test=1.
+  const testBtn = $("#test-btn");
+  if (new URLSearchParams(location.search).get("test") === "1" && CONFIG.testPurchase.link) {
+    testBtn.hidden = false;
+    testBtn.textContent = `Test purchase (${money(CONFIG.testPurchase.price)})`;
+  }
+  testBtn.addEventListener("click", () => {
+    state.test = true;
+    try {
+      if (validate()) openModal();
+    } finally {
+      state.test = false; // back to normal prices for everything else
+    }
   });
 
   // modal
