@@ -32,26 +32,12 @@ const CONFIG = {
   daysAhead: 14,        // how far out people can book
   minNoticeHours: 12,   // no bookings sooner than this
 
-  // Booked times live in your bookings Google Sheet (see BOOKINGS-SETUP.md).
-  // Paste its web app URL here. Booked times, and any start time whose
-  // session would overlap one, show greyed out. Paid live sessions are added
-  // to the sheet automatically. Leave "" to turn this off.
+  // Your bookings Google Sheet web app (see BOOKINGS-SETUP.md). It:
+  // - tells the site which times are booked, so they show greyed out, and
+  // - when a customer comes back from Stripe, checks WITH STRIPE that they
+  //   really paid, then records the order, blocks the time and sends both
+  //   emails (yours and the customer's) from your Gmail.
   bookingsUrl: "https://script.google.com/macros/s/AKfycbxC6CsTotgpFHxQbm1X8MThDjTHx-r0hIle6prtniFphtHl_HwsEMqnfiA0Kyof1-SB/exec",
-
-  // Both emails below are sent only after the customer pays: Stripe sends them
-  // back to the site (?paid=1) and the site emails the booking they just paid for.
-
-  // YOUR copy of each paid booking, via Web3Forms (free, web3forms.com).
-  web3formsKey: "a406df78-c071-4844-b39b-403a29e585c2",
-
-  // The CUSTOMER's confirmation email, via EmailJS (free, emailjs.com, sends
-  // from your Gmail). Paste the three values from your EmailJS dashboard.
-  // While any of them is blank, customers just aren't emailed.
-  emailjs: {
-    publicKey: "iWkYvP4alOOdrC2JA",    // Account → General → Public Key
-    serviceId: "service_lwm3k7x",     // Email Services → your Gmail service → Service ID
-    templateId: "template_cd3o459",   // Email Templates → your template → Template ID
-  },
 
   // Stripe Payment Links (create these in your Stripe dashboard, then paste
   // each link here). Each link must charge exactly the price shown.
@@ -416,12 +402,13 @@ function paymentUrl() {
 /* ---------- Booking record ---------- */
 
 // Everything about one order. It's saved in the customer's browser right
-// before they go to Stripe, and used to send both emails once they come
-// back after paying. Their booking ID doubles as the confirmation number.
+// before they go to Stripe, and sent to the bookings sheet to confirm once
+// they come back after paying. The booking ID is their confirmation number.
 function buildBooking() {
   const live = state.service === "live";
   return {
     id: state.bookingId,
+    kind: live ? "live" : "vod",
     test: state.test,
     service: live ? "Live Coaching" : "VOD Review",
     length: live ? durationLabel(state.duration) : "",
@@ -440,9 +427,6 @@ function buildBooking() {
     reference: stripeReference(),
     createdAt: new Date().toISOString(),
     paid: false,
-    slotSaved: false,
-    coachSent: false,
-    customerSent: false,
   };
 }
 
@@ -453,7 +437,8 @@ function fmtWhen(iso, timeZone) {
   }).format(new Date(iso));
 }
 
-// The order as label/value rows: used in the review popup and the customer's email
+// The order as label/value rows for the review popup
+// (the emails are written by the bookings sheet script)
 function orderRows(b) {
   const rows = [];
   if (b.test) rows.push(["Test purchase", "Not a real booking"]);
@@ -471,134 +456,46 @@ function orderRows(b) {
   return rows;
 }
 
-// Plain-text booking for YOUR email
-function coachText(b) {
-  const lines = [];
-  if (b.test) lines.push("*** TEST PURCHASE, not a real booking ***", "");
-  lines.push(`Confirmation number: ${b.id}`);
-  lines.push(`Paid: ${money(b.total)} (Stripe reference ${b.reference})`, "");
-  lines.push(`Service: ${b.service}`);
-  if (b.length) lines.push(`Length: ${b.length}`);
-  if (b.start) {
-    lines.push(`When (your time): ${fmtWhen(b.start, CONFIG.coachTimeZone)}`);
-    lines.push(`When (their time): ${fmtWhen(b.start, b.timeZone)}`);
-  }
-  if (b.replayCode) lines.push(`Replay code: ${b.replayCode}`);
-  if (b.ign) lines.push(`In-game name: ${b.ign}`);
-  if (b.notes) lines.push(`Notes: ${b.notes}`);
-  lines.push(`Private (do not post): ${b.private ? "Yes" : "No"}`, "");
-  lines.push(`Discord: ${b.discord}`, `Name: ${b.name || "(not given)"}`, `Email: ${b.email}`);
-  lines.push(`Rank: ${b.rank}`, `Time zone: ${b.timeZone}`);
-  if (b.start) {
-    lines.push("", CONFIG.bookingsUrl
-      ? "This time is now greyed out on the website. To free it again (cancellation or reschedule), delete its row in your bookings sheet."
-      : "Booked times aren't set up yet (see BOOKINGS-SETUP.md), so this time is still open on the website.");
-  }
-  return lines.join("\n");
-}
+/* ---------- Confirming a paid booking ---------- */
 
-// What to call the customer: their name if they gave one, otherwise their Discord
-const displayName = (b) => b.name || b.discord;
-
-const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) =>
-  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-
-// HTML body of the CUSTOMER's confirmation email
-function customerEmailHtml(b) {
-  const rows = orderRows(b).map(([k, v]) =>
-    `<tr><td style="padding:7px 18px 7px 0;color:#666;vertical-align:top">${escapeHtml(k)}</td>` +
-    `<td style="padding:7px 0;font-weight:600">${escapeHtml(v)}</td></tr>`).join("");
-  const next = b.start
-    ? `I'll message you on Discord before your session. My Discord is <strong>tesla0945</strong>. Need to reschedule? Reply to this email at least 24 hours before your session.`
-    : `I'll send your review within 48 hours.`;
-  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#222;max-width:560px">
-<p>Hi ${escapeHtml(displayName(b))},</p>
-<p>Thanks for booking! Your payment went through and you're all set.</p>
-<p style="font-size:13px;color:#666;margin-bottom:2px">Confirmation number</p>
-<p style="font-size:24px;font-weight:700;letter-spacing:2px;margin-top:0">${escapeHtml(b.id)}</p>
-<table style="border-collapse:collapse;margin:8px 0 18px">${rows}</table>
-<p>${next}</p>
-<p>Questions? Just reply to this email.</p>
-<p>Tesla<br><a href="https://teslacoaching.com">teslacoaching.com</a></p>
-</div>`;
-}
-
-/* ---------- Emails (sent only after payment) ---------- */
-
-async function sendCoachEmail(b) {
-  if (!CONFIG.web3formsKey) return true; // not set up: nothing to send
-  try {
-    const res = await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        access_key: CONFIG.web3formsKey,
-        subject: `${b.test ? "[TEST] " : ""}Paid booking ${b.id}: ${b.service}${b.length ? ` ${b.length}` : ""} ${money(b.total)}`,
-        from_name: "Tesla’s Coaching", // curly ’ (a straight ' gets mangled by email services)
-        name: displayName(b),
-        email: b.email, // replying to the email goes to the customer
-        message: coachText(b),
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    return res.ok && data.success !== false;
-  } catch {
-    return false;
-  }
-}
-
-const customerEmailReady = () =>
-  !!(CONFIG.emailjs.publicKey && CONFIG.emailjs.serviceId && CONFIG.emailjs.templateId);
-
-async function sendCustomerEmail(b) {
-  if (!customerEmailReady()) return true; // not set up: nothing to send
-  try {
-    const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        service_id: CONFIG.emailjs.serviceId,
-        template_id: CONFIG.emailjs.templateId,
-        user_id: CONFIG.emailjs.publicKey,
-        template_params: {
-          to_email: b.email,
-          to_name: displayName(b),
-          reply_to: CONFIG.contactEmail,
-          confirmation: b.id,
-          subject: `${b.test ? "[TEST] " : ""}Your booking is confirmed (${b.id})`,
-          order_html: customerEmailHtml(b),
-        },
-      }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-// Add a paid live session to the bookings sheet so its time greys out
-async function saveBookedSlot(b) {
-  if (!b.start || !CONFIG.bookingsUrl) return true; // VOD, or not set up
-  const minutes = b.minutes || 60;
+// Ask the bookings sheet to confirm this booking. The sheet checks with Stripe
+// that it was really paid, then records it, blocks the time and sends both
+// emails. Resolves to one of:
+//   "confirmed"  - paid and done (data.email is where the confirmation went)
+//   "not_paid"   - Stripe has no paid checkout for this booking
+//   "processing" - paid by a method that hasn't cleared yet (e.g. bank)
+//   "invalid"    - the booking details don't make sense (won't ever work)
+//   "error"      - couldn't reach the sheet or Stripe; try again later
+async function confirmBooking(b) {
+  if (!CONFIG.bookingsUrl) return { status: "error" };
   try {
     // sent as plain text so the browser doesn't need a pre-check Google can't answer
     const res = await fetch(CONFIG.bookingsUrl, {
       method: "POST",
       body: JSON.stringify({
-        id: b.id,
-        start: b.start,
-        end: new Date(Date.parse(b.start) + minutes * 60000).toISOString(),
-        service: `${b.service} ${b.length}`,
-        name: b.name,
-        discord: b.discord,
-        test: b.test,
+        action: "confirm",
+        booking: {
+          id: b.id,
+          kind: b.kind || (b.start ? "live" : "vod"),
+          test: b.test,
+          private: b.private,
+          minutes: b.minutes,
+          start: b.start,
+          name: b.name,
+          email: b.email,
+          discord: b.discord,
+          rank: b.rank,
+          replayCode: b.replayCode,
+          ign: b.ign,
+          notes: b.notes,
+          timeZone: b.timeZone,
+        },
       }),
     });
     const data = await res.json();
-    // "invalid booking" won't ever succeed, so don't keep retrying it
-    return !!data.ok || data.error === "invalid booking";
+    return data && data.status ? data : { status: "error" };
   } catch {
-    return false;
+    return { status: "error" };
   }
 }
 
@@ -614,25 +511,33 @@ function clearPending() {
   try { localStorage.removeItem(PENDING_KEY); } catch { /* storage unavailable */ }
 }
 
-// Send whichever emails are still owed for a paid booking. Runs on every
-// page load too, so a failed send is retried the next time they visit.
-let delivering = false;
-async function deliverPaidBooking() {
-  const b = loadPending();
-  if (!b || !b.paid || delivering) return;
-  delivering = true;
-  try {
-    if (!b.slotSaved) {
-      b.slotSaved = await saveBookedSlot(b);
-      savePending(b);
-      if (b.slotSaved) loadBooked(); // grey it out here too
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const PENDING_MAX_DAYS = 7; // stop retrying a booking after this long
+
+// Confirm the paid booking saved in this browser, if there is one. Runs when
+// Stripe sends the customer back, and again on later visits if it couldn't
+// be confirmed yet (sheet unreachable, or a bank payment still clearing).
+let confirming = null;
+function confirmPaidBooking(quickRetries = 0) {
+  if (confirming) return confirming;
+  confirming = (async () => {
+    const b = loadPending();
+    if (!b || !b.paid) return null;
+    if (b.createdAt && Date.now() - Date.parse(b.createdAt) > PENDING_MAX_DAYS * 86400000) {
+      clearPending();
+      return null;
     }
-    if (!b.coachSent) { b.coachSent = await sendCoachEmail(b); savePending(b); }
-    if (!b.customerSent) { b.customerSent = await sendCustomerEmail(b); savePending(b); }
-    if (b.slotSaved && b.coachSent && b.customerSent) clearPending();
-  } finally {
-    delivering = false;
-  }
+    let result = { status: "error" };
+    for (let attempt = 0; attempt <= quickRetries; attempt++) {
+      if (attempt) await sleep(3000);
+      result = await confirmBooking(b);
+      if (result.status !== "not_paid" && result.status !== "error") break;
+    }
+    if (result.status === "confirmed" || result.status === "invalid") clearPending();
+    if (result.status === "confirmed" && b.start) loadBooked(); // grey the time out here too
+    return { ...result, booking: b };
+  })().finally(() => { confirming = null; });
+  return confirming;
 }
 
 /* ---------- Order review popup ---------- */
@@ -662,7 +567,7 @@ function openModal() {
     $("#modal-pay").href = pay;
     $("#modal-pay").textContent = `Continue to payment with Stripe (${money(booking.total)})`;
     $("#modal-note").hidden = false;
-    savePending(booking); // emails go out only after Stripe sends them back paid
+    savePending(booking); // confirmed (and emailed) only after Stripe sends them back paid
   } else {
     $("#modal-intro").innerHTML = `Online payment isn't available for this option yet. Please email <a href="mailto:${CONFIG.contactEmail}">${CONFIG.contactEmail}</a> to book it.`;
     $("#modal-note").hidden = true;
@@ -674,28 +579,53 @@ function openModal() {
 
 /* ---------- Back from Stripe (?paid=1) ---------- */
 
-function handlePaymentReturn() {
+// What the "back from Stripe" popup says at each stage
+const PAID_MESSAGES = {
+  checking: ["Confirming your payment…", "This only takes a moment.", false],
+  confirmed: ["Payment received. Thank you!", "You'll receive an email at {email} shortly with your booking information.", true],
+  processing: ["Payment processing", "Your payment is still clearing (bank payments can take a few days). I'll email you to confirm your booking once it goes through.", true],
+  not_paid: ["We couldn't confirm your payment", `Stripe hasn't confirmed a payment for this booking. If you were charged, email ${CONFIG.contactEmail} with your confirmation number and I'll sort it out.`, false],
+  invalid: ["Something went wrong", `I couldn't confirm this booking automatically. Please email ${CONFIG.contactEmail} with your confirmation number.`, false],
+  error: ["Payment received. Thank you!", "You'll receive an email shortly with your booking information.", true],
+  unknown: ["Payment received. Thank you!", "I'll email you shortly with your booking information.", true],
+};
+
+function showPaidMessage(status, booking, email) {
+  const [title, note, showHelp] = PAID_MESSAGES[status] || PAID_MESSAGES.error;
+  $("#paid-title").textContent = title;
+  $("#paid-email-note").textContent = note.replace("{email}", email || (booking && booking.email) || "your email");
+  $("#paid-help").hidden = !showHelp;
+  $("#paid-number-row").hidden = !booking;
+  $("#paid-number").textContent = booking ? booking.id : "";
+  $("#paid-modal").hidden = false;
+}
+
+async function handlePaymentReturn() {
   const params = new URLSearchParams(location.search);
-  if (params.get("paid") === "1") {
-    const b = loadPending();
-    if (b && !b.paid) {
-      b.paid = true;
-      b.paidAt = new Date().toISOString();
-      savePending(b);
-    }
-    $("#paid-number-row").hidden = !b;
-    $("#paid-number").textContent = b ? b.id : "";
-    $("#paid-email-note").textContent = b && customerEmailReady()
-      ? `You'll receive an email at ${b.email} shortly with your booking information.`
-      : "I'll email you shortly with your booking information.";
-    $("#paid-modal").hidden = false;
-    $("#paid-close").focus();
-    // tidy the address bar so a refresh doesn't show this again
-    params.delete("paid");
-    const qs = params.toString();
-    history.replaceState(null, "", location.pathname + (qs ? `?${qs}` : "") + location.hash);
+  if (params.get("paid") !== "1") {
+    confirmPaidBooking(); // quietly retry anything left over from an earlier visit
+    return;
   }
-  deliverPaidBooking();
+  // tidy the address bar so a refresh doesn't show this again
+  params.delete("paid");
+  const qs = params.toString();
+  history.replaceState(null, "", location.pathname + (qs ? `?${qs}` : "") + location.hash);
+
+  const b = loadPending();
+  if (!b) {
+    showPaidMessage("unknown", null); // paid on another device, or storage blocked
+    $("#paid-close").focus();
+    return;
+  }
+  if (!b.paid) {
+    b.paid = true;
+    b.paidAt = new Date().toISOString();
+    savePending(b);
+  }
+  showPaidMessage("checking", b);
+  $("#paid-close").focus();
+  const result = await confirmPaidBooking(2);
+  showPaidMessage(result ? result.status : "error", b, result && result.email);
 }
 function closePaidMessage() {
   $("#paid-modal").hidden = true;
