@@ -23,7 +23,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=a96b7e88">
+  <link rel="stylesheet" href="styles.css?v=2e5724db">
 </head>
 <body>
 
@@ -779,8 +779,11 @@
        "after payment" redirect is https://teslacoaching.com/?paid=1) -->
   <div class="modal" id="paid-modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="paid-title">
-      <!-- shown only while the payment is being confirmed -->
+      <!-- spinner while the payment is being confirmed, then a green tick in the same spot -->
       <div class="spinner" id="paid-spinner" aria-hidden="true" hidden></div>
+      <svg class="checkmark" id="paid-check" viewBox="0 0 52 52" aria-hidden="true" hidden>
+        <circle cx="26" cy="26" r="23"/><path d="M15 27.5l7.5 7.5L37.5 19"/>
+      </svg>
       <h3 id="paid-title">Payment received. Thank you!</h3>
       <div class="confirm-number" id="paid-number-row">
         <span>Confirmation number</span>
@@ -799,7 +802,11 @@
        (teslacoaching.com/?reschedule=TC-XXXXXX&key=...) -->
   <div class="modal" id="reschedule-modal" hidden>
     <div class="modal-card reschedule-card" role="dialog" aria-modal="true" aria-labelledby="rs-title">
-      <h3 id="rs-title">Reschedule your session</h3>
+      <h3 id="rs-title" class="title-with-check"><span id="rs-title-text">Reschedule your session</span>
+        <svg class="checkmark checkmark-small" id="rs-check" viewBox="0 0 52 52" aria-hidden="true" hidden>
+          <circle cx="26" cy="26" r="23"/><path d="M15 27.5l7.5 7.5L37.5 19"/>
+        </svg>
+      </h3>
       <div id="rs-loading" class="rs-loading">
         <div class="spinner" aria-hidden="true"></div>
         <p class="muted" role="status">Loading your booking…</p>
@@ -826,6 +833,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=e5e99d01"></script>
+  <script src="script.js?v=2b7f4e84"></script>
 </body>
 </html>

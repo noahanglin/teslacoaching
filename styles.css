@@ -161,6 +161,8 @@ p { margin: 0 0 1em; }
   animation: spin 40s linear infinite;
 }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+/* script.js adds this while a popup is open or the hero is out of view */
+.orbs-paused .borb, .orbs-paused .ring { animation-play-state: paused; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
   .borb, .ring { animation: none; }
@@ -564,7 +566,30 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .spinner[hidden] { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
-.modal-card.checking h3, .modal-card.checking #paid-email-note { text-align: center; }
+/* while confirming / once confirmed, the payment popup is centred under the spinner or tick */
+.modal-card.centered h3, .modal-card.centered #paid-email-note, .modal-card.centered #paid-help { text-align: center; }
+.modal-card.centered .modal-actions { justify-content: center; }
+
+/* Green tick: pops in, then the check draws itself */
+:root { --success: #34d399; }
+.checkmark { display: block; width: 52px; height: 52px; margin: 4px auto 18px; overflow: visible; }
+.checkmark[hidden] { display: none; }
+.checkmark circle {
+  fill: rgba(52, 211, 153, 0.14); stroke: var(--success); stroke-width: 3;
+  transform-origin: 26px 26px; animation: check-pop 0.35s cubic-bezier(0.3, 1.6, 0.6, 1) both;
+}
+.checkmark path {
+  fill: none; stroke: var(--success); stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 34; stroke-dashoffset: 34; animation: check-draw 0.35s 0.25s ease-out forwards;
+}
+@keyframes check-pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes check-draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .checkmark circle, .checkmark path { animation: none; stroke-dashoffset: 0; }
+}
+/* small tick to the right of a heading */
+.title-with-check { display: flex; align-items: center; gap: 10px; padding-right: 28px; }
+.checkmark-small { width: 28px; height: 28px; margin: 0; flex: 0 0 auto; }
 
 /* Reschedule popup */
 .reschedule-card { max-width: 600px; }

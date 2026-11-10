@@ -721,11 +721,14 @@ function showPaidMessage(status, id, email) {
   $("#paid-title").textContent = title;
   $("#paid-email-note").textContent = note.replace("{email}", email || "your email");
   $("#paid-help").hidden = !showHelp;
-  // while confirming: spinning circle, and no "Got it" button yet
+  // while confirming: spinning circle and no "Got it" button yet;
+  // once confirmed: a green tick in the same spot
   const checking = status === "checking";
+  const confirmed = status === "confirmed";
   $("#paid-spinner").hidden = !checking;
+  $("#paid-check").toggleAttribute("hidden", !confirmed); // (SVG has no .hidden property)
   $("#paid-actions").hidden = checking;
-  $("#paid-modal .modal-card").classList.toggle("checking", checking);
+  $("#paid-modal .modal-card").classList.toggle("centered", checking || confirmed);
   $("#paid-number-row").hidden = !id;
   $("#paid-number").textContent = id || "";
   $("#paid-modal").hidden = false;
@@ -781,11 +784,14 @@ function rsTaken(s) {
 }
 const rsOpen = (s) => !rsTaken(s) && s.getTime() !== rs.start.getTime();
 
-function rsShow(part, message) {
+// `success` swaps the heading for "Session rescheduled!" with a green tick
+function rsShow(part, message, success = false) {
   $("#rs-loading").hidden = part !== "loading";
   $("#rs-body").hidden = part !== "body";
   $("#rs-message").hidden = part !== "message";
   if (message) $("#rs-message-text").textContent = message;
+  $("#rs-title-text").textContent = success ? "Session rescheduled!" : "Reschedule your session";
+  $("#rs-check").toggleAttribute("hidden", !success); // (SVG has no .hidden property)
 }
 
 function rsBuildSlots() {
@@ -894,7 +900,7 @@ async function confirmReschedule() {
   const data = await askSheet({ action: "reschedule", id: rs.id, key: rs.key, start: rs.slot.toISOString(), timeZone: userTimeZone });
   if (data.ok) {
     const when = fmtFull.format(new Date(data.start));
-    rsShow("message", `Done! Your session is now ${when}. ${data.emailed === false ? "" : "I've emailed you the new time."}`);
+    rsShow("message", `Your session is now ${when}.${data.emailed === false ? "" : " I've emailed you the new time."}`, true);
     loadBooked(); // update the booking form's greyed-out times too
     return;
   }
@@ -929,6 +935,56 @@ function closeModal() {
   showPayStep(false);
   $("#modal").hidden = true;
   $("#submit-btn").focus();
+}
+
+/* ---------- Pause the orbs when nobody can see them ---------- */
+
+// The orbs use heavy animated SVG filters (smoke, goo, glows). Under a popup,
+// the popup's blurred background would have to re-blur them every frame,
+// which can slow down the whole computer. So they pause while a popup is
+// open, while the top of the page is scrolled out of view, and while the
+// tab is in the background.
+let orbsPaused = false;
+const orbPauseReasons = new Set();
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function setOrbPause(reason, on) {
+  if (on) orbPauseReasons.add(reason);
+  else orbPauseReasons.delete(reason);
+  const paused = orbPauseReasons.size > 0;
+  if (paused === orbsPaused) return;
+  orbsPaused = paused;
+  document.documentElement.classList.toggle("orbs-paused", paused); // pauses the CSS float/spin
+  if (!prefersReducedMotion) {                                       // (those stay frozen anyway)
+    $$(".hero-art svg").forEach((svg) => {
+      if (paused) svg.pauseAnimations && svg.pauseAnimations();
+      else svg.unpauseAnimations && svg.unpauseAnimations();
+    });
+  }
+}
+
+function initOrbPausing() {
+  // any popup open?
+  const modals = $$(".modal");
+  const checkPopups = () => setOrbPause("popup", modals.some((m) => !m.hidden));
+  const watcher = new MutationObserver(checkPopups);
+  modals.forEach((m) => watcher.observe(m, { attributes: true, attributeFilter: ["hidden"] }));
+  checkPopups();
+  // top of the page scrolled away? (the orbs can poke out a little, so allow some margin)
+  const art = $(".hero-art");
+  if (art) {
+    const checkScroll = () => {
+      const r = art.getBoundingClientRect();
+      const margin = r.height * 0.5;
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      setOrbPause("offscreen", r.bottom < -margin || (vh > 0 && r.top > vh + margin));
+    };
+    window.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    checkScroll();
+  }
+  // tab in the background?
+  document.addEventListener("visibilitychange", () => setOrbPause("background", document.hidden));
 }
 
 /* ---------- Orb tendrils that latch onto the cursor ---------- */
@@ -1148,6 +1204,16 @@ function initOrbTethers() {
   window.addEventListener("scroll", () => { if (pointer.active) kick(); }, { passive: true });
 
   function frame(time) {
+    // paused (popup open, scrolled away): drop any tendril and stop drawing
+    if (orbsPaused) {
+      for (const o of orbs) {
+        o.latched = false;
+        o.alpha = 0;
+        o.group.setAttribute("opacity", "0");
+      }
+      running = false;
+      return;
+    }
     let busy = false;
     const dt = lastTime === null ? 16 : Math.min(50, time - lastTime); // ms since last frame
     lastTime = time;
@@ -1424,9 +1490,10 @@ document.addEventListener("DOMContentLoaded", () => {
   handlePaymentReturn();
 
   // Freeze the SVG orb animations for visitors who prefer reduced motion
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (prefersReducedMotion) {
     $$(".borb svg").forEach((svg) => svg.pauseAnimations && svg.pauseAnimations());
   }
+  initOrbPausing();
 
   // "Copy" buttons (e.g. Discord username in the About section)
   $$("[data-copy]").forEach((btn) => btn.addEventListener("click", async () => {
