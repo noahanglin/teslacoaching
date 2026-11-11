@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /twitch-callback.html
+
+Sitemap: https://teslacoaching.com/sitemap.xml
