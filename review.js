@@ -60,7 +60,6 @@ async function load() {
     if (star) star.checked = true;
     $("#review-text").value = p.text || "";
     $("#review-name").value = p.showAs || r.showAs || "";
-    $("#review-rank").value = p.rank || "";
     $("#review-feature").checked = !!p.feature;
   }
   paintStars(chosen());
@@ -85,11 +84,7 @@ $("#review-form").addEventListener("submit", async (e) => {
   btn.textContent = "Sending…";
   const feature = $("#review-feature").checked;
   const showAs = $("#review-name").value.trim();
-  const r = await askSheet({
-    action: "review", id, key, stars, text, showAs,
-    rank: $("#review-rank").value.trim(),
-    feature,
-  });
+  const r = await askSheet({ action: "review", id, key, stars, text, showAs, feature });
   btn.disabled = false;
   btn.textContent = "Send review";
   if (!r.ok) {

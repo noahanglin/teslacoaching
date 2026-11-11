@@ -560,9 +560,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .stars input:focus-visible + label { outline: 2px solid var(--purple); outline-offset: 3px; border-radius: 6px; }
 .stars.invalid-stars label { background: rgba(255, 107, 138, 0.45); }
 .stars-word { font-family: var(--font-head); font-size: 1.2rem; font-weight: 600; color: var(--gold); }
+.review-name-field { margin-bottom: 14px; }
 @media (max-width: 600px) {
   .review-card { padding: 24px 20px; }
-  .review-card .input-row { grid-template-columns: 1fr; }
 }
 
 .not-found { min-height: 72vh; display: grid; place-items: center; text-align: center; padding: 80px 0; }
