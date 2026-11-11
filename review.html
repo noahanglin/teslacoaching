@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leave a review | Tesla's Coaching</title>
+  <!-- Opened from the link in the follow-up email (review.html?id=...&key=...) -->
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0d0a14">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css?v=b8d9469b">
+</head>
+<body>
+
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="./" class="logo">
+        <img class="logo-img" src="images/logo.jpg" alt="" width="30" height="30">
+        <span>Tesla's<span class="logo-accent">COACHING</span></span>
+      </a>
+      <a href="./#book" class="btn btn-small">Book now</a>
+    </div>
+  </header>
+
+  <main class="review-page">
+    <div class="container review-wrap">
+
+      <!-- While the booking is looked up -->
+      <div class="review-card" id="review-loading">
+        <p class="review-status"><span class="spinner" aria-hidden="true"></span> Loading your booking…</p>
+      </div>
+
+      <!-- Link missing or not recognised -->
+      <div class="review-card" id="review-invalid" hidden>
+        <h1>This review link doesn't work</h1>
+        <p class="muted">Please open it from the "Leave a review" button in your follow-up email. If it still doesn't work, just reply to that email with your review, or send it to <a href="mailto:moiracoaching@gmail.com">moiracoaching@gmail.com</a>.</p>
+        <a href="./" class="btn">Go to the website</a>
+      </div>
+
+      <!-- The form -->
+      <form class="review-card" id="review-form" novalidate hidden>
+        <p class="eyebrow">Leave a review</p>
+        <h1>How did it go?</h1>
+        <p class="muted review-for" id="review-for"></p>
+        <p class="review-note" id="review-again" hidden>You've already left a review. Sending this one replaces it.</p>
+
+        <fieldset class="field-group">
+          <legend>Your rating</legend>
+          <div class="stars-row">
+            <div class="stars" id="stars">
+              <input type="radio" name="stars" id="star-1" value="1"><label for="star-1"><span class="sr-only">1 star</span></label>
+              <input type="radio" name="stars" id="star-2" value="2"><label for="star-2"><span class="sr-only">2 stars</span></label>
+              <input type="radio" name="stars" id="star-3" value="3"><label for="star-3"><span class="sr-only">3 stars</span></label>
+              <input type="radio" name="stars" id="star-4" value="4"><label for="star-4"><span class="sr-only">4 stars</span></label>
+              <input type="radio" name="stars" id="star-5" value="5"><label for="star-5"><span class="sr-only">5 stars</span></label>
+            </div>
+            <span class="stars-word" id="stars-word" aria-hidden="true">Tap a star</span>
+          </div>
+        </fieldset>
+
+        <fieldset class="field-group">
+          <legend>Your review</legend>
+          <label class="input-label" for="review-text">What did you work on, and how did it help?</label>
+          <textarea id="review-text" rows="5" maxlength="1500" placeholder="e.g. We worked on when to flank vs stay with my team. I'm dying way less and my games feel calmer."></textarea>
+        </fieldset>
+
+        <fieldset class="field-group">
+          <legend>How it's shown</legend>
+          <div class="input-row">
+            <div>
+              <label class="input-label" for="review-name">Name to show</label>
+              <input type="text" id="review-name" maxlength="40" autocomplete="off" placeholder="First name, Discord or a nickname">
+            </div>
+            <div>
+              <label class="input-label" for="review-rank">Your rank (optional)</label>
+              <input type="text" id="review-rank" maxlength="30" autocomplete="off" placeholder="e.g. Gold, or Plat → Diamond">
+            </div>
+          </div>
+          <label class="check-option">
+            <input type="checkbox" id="review-feature">
+            <span class="check-box" aria-hidden="true"></span>
+            <span class="check-text">
+              <strong>You can feature my review on the website</strong>
+              <small>It would appear with the name and rank above. Leave this unticked to keep it just between us.</small>
+            </span>
+          </label>
+        </fieldset>
+
+        <button type="submit" class="btn btn-block" id="review-send">Send review</button>
+        <p class="form-error" id="review-error" role="alert"></p>
+      </form>
+
+      <!-- Sent -->
+      <div class="review-card review-done" id="review-done" hidden>
+        <svg class="checkmark" viewBox="0 0 52 52" aria-hidden="true">
+          <circle cx="26" cy="26" r="23"/><path d="M15 27.5l7.5 7.5L37.5 19"/>
+        </svg>
+        <h1>Thanks for your review!</h1>
+        <p class="muted" id="review-done-note">It really helps, and I read every one.</p>
+        <div class="hero-ctas">
+          <a href="./#book" class="btn">Book your next session</a>
+          <a href="./" class="btn btn-ghost">Back to the website</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p>&copy; <span id="year">2026</span> Tesla Coaching.<span class="footer-legal"><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></span></p>
+      <p><a href="mailto:moiracoaching@gmail.com">moiracoaching@gmail.com</a> · Discord: <span>tesla0945</span></p>
+    </div>
+  </footer>
+  <script src="review.js?v=022de9ef"></script>
+</body>
+</html>
