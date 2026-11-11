@@ -19,13 +19,13 @@ const CONFIG = {
   // 0 = Sunday ... 6 = Saturday. Leave an empty array for days off.
   // "24:00" means midnight at the end of that day; sessions must finish by then.
   availability: {
-    0: [["17:00", "24:00"]],
-    1: [["17:00", "24:00"]],
-    2: [["17:00", "24:00"]],
-    3: [["17:00", "24:00"]],
-    4: [["17:00", "24:00"]],
-    5: [["17:00", "24:00"]],
-    6: [["17:00", "24:00"]],
+    0: [["17:00", "24:00"]], // Sunday
+    1: [["17:00", "24:00"]], // Monday
+    2: [],                   // Tuesday (off)
+    3: [["17:00", "24:00"]], // Wednesday
+    4: [],                   // Thursday (off)
+    5: [["17:00", "24:00"]], // Friday
+    6: [],                   // Saturday (off)
   },
 
   slotStepMinutes: 30,  // how often a session can start (30 = on the hour and half hour)
